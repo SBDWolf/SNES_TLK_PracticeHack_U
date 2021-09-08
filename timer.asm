@@ -73,13 +73,20 @@ org every_frame
 	STA timer_cap_flag
 	
 	
-	;prepare to return to hijacked routine, but check if select has been pressed first and update the hud if so
+	;prepare to return to hijacked routine, but check if select (or X only in level 10) has been pressed first and update the hud if so
 	done:
 	CLD
 	REP #$28
 	LDA button_pressed_high_byte
 	BIT #$0020
 	BNE update_hud
+	LDA current_level
+	CMP #$0009
+	BNE skip
+	LDA button_pressed_low_byte
+	BIT #$0040
+	BNE update_hud
+	skip:
 	INC $E5
 	LDA $0A89
 	RTL

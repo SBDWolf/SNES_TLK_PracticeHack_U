@@ -1,0 +1,96 @@
+
+
+; indirect addressing: 14, 1F, 68, 93, DC, DF, EF, F2
+
+$7E0056  $0001  Fade in/out flag, set negative to fade out, positive (non-zero) to fade in
+$7E0057  $0001  Brightness, 0=black, $0F=full
+
+$7E005A  $0002  Filtered controller inputs
+$7E005C  $0002  Current controller inputs
+
+$7E0062  $0002  Current inputs after rebinding
+
+$7E00FA  $0002  Exile cutscene check ???
+
+$7E0A00  $0002  IRQ jump pointer (bank $C0/00)
+$7E0A02  $0001  Index into IRQ position tables
+
+$7E0A08  $0002  Register mirror for $4200
+$7E0A0A  $0002  NMI Counter (every frame)
+$7E0A0E  $0002  Cleared at NMI, used to wait until next frame
+
+$7E0A40  $0002  Progress during Stampede, ends at $1068
+$7E0A42  $0003  Related to RNG, STA $0A42 : STZ $0A43 (a16) ???
+
+$7E0A4E  $0002  Title screen check ???
+
+$7E0A89  $0002  Pause flag, 0=unpaused 1=paused
+$7E0A8B  $0002  Pause allowed flag, 0=disabled
+
+$7E0AD7  $0002  Set to $0F when pausing, silences music when back to zero
+
+$7E1E00  $0003  RNG seed
+$7E1E03  $0002  Flags related to inputs, #$8000=Demo ???
+
+$7E1E0F  $0002  Backup of controller option during demo playback
+$7E1E11  $0002  Backup of difficulty option during demo playback
+
+$7E2000  $0002  Simba age, $0000=cub $00FF=adult
+$7E2002  $0002  Simba roar
+$7E2004  $0002  Simba health
+$7E2006  $0004  Code in RAM, MVN and RTL, used during loading screens
+$7E200A  $0002  Simba lives drawn on HUD
+
+$7E2430  $0002  Bug Hunt flag
+$7E2432  $0002  Bug Toss flag
+
+$7EA68C  $0002  DP pointer
+$7EA68E  $0002  First byte of RNG seed returned each cycle, high byte is zero (??? is that right? needs double checking)
+
+$7EA692  $0002  Triggers loading a level when non-zero, MSB loads from $7FFFA0
+
+$7EA6BA  $0002  Flag to skip death animation, set to $FFFF when falling in water
+
+$7EA6C2  $0001  Set to 1 when Scar thrown off-screen, overwritten by writes to $A6C1
+$7EA6C4  $0002  Flag to trigger the Pridelands cutscene, set to $FFFF to skip it
+
+$7EA6EA  $0002  Set to $FFFF while Scar is dazed
+
+$7EB21B  $0002  Simba X position
+$7EB21D  $0002  Simba Y position
+
+$7EB259  $0002  Invincibility frames
+
+$7EB213  $2980  Object RAM ???, $80 bytes per slot
+ +$0000  $0002  Previous slot ???
+ +$0002  $0002  Next slot ???
+ +$0004  $0003  Long pointer to data
+
+$7EBBC1  $0002  Bug Hunt III timer
+
+$7EC0C1  $0002  Bug Hunt I timer
+
+$7ECB41  $0002  Bug Hunt II timer
+
+$7EF93A  $0002  ??? $7FFF9E +1 during level loading
+
+$7F8000  $0800  BG3 tilemap during options menu
+
+$7FFF90  $0002  Upside-down mode flag, 0=disabled
+$7FFF92  $0002  Difficulty setting, 0=easy 1=normal 2=difficult
+$7FFF94  $0002  Music setting, 0=off 1=stereo 2=mono
+$7FFF96  $0002  Sound effects flag, 0=off 1=on
+$7FFF98  $0002  UNUSED ???
+$7FFF9A  $0002  Controller configuration, 0=ABY 1=BAY 2=YAB 3=AYB 4=BYA 5=YBA
+$7FFF9C  $0002  Infinite health flag
+$7FFF9E  $0002  Current level
+$7FFFA0  $0002  Next level to load, used during bonus minigames and cutscenes
+$7FFFA2  $0002  Set during loading if level is being repeated, always reset after loading
+$7FFFA4  $0002  Checkpoint X position
+$7FFFA6  $0002  Checkpoint Y position
+$7FFFA8  $0002  Continues
+$7FFFAA  $0002  Simba lives
+$7FFFAC  $0002  Simba max health
+$7FFFAE  $0002  Simba max roar
+
+$7FFFB4  $0002  BG2 vertical scrolling

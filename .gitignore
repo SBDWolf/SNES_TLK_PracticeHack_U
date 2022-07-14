@@ -1,0 +1,5 @@
+*.srm
+*.s[mf]c
+*.sym
+build/*
+!*.gitkeep

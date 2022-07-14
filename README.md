@@ -1,15 +1,48 @@
-# SNES_TLK_TimerHack_U
-Timer Hack for the SNES game The Lion King
+# The Lion King Practice Hack (SNES)
+ This hack is intended to help speedrunners practice the game in the most convenient ways possible.
 
-To be assembled using Asar, run "asar.exe --fix-checksum=off main.asm {ROM name}" through the command prompt.
 
-Features:
-- Level timer. I unfortunately couldn't get it to display and update every frame without risk of crashing the game, so it instead displays the final level time at the end of a level. It displays on the bottom left of the screen in "m ss ff" format (m = minutes, s = seconds, f = frames)
-- You can press select on the controller to display what the timer currently reads at any moment.
-- Inside level 10 only, pressing X also displays the current timer value on the screen. This makes timing the end point of the level a lot more efficient.
-- Removes game overs.
+## How to get it:
+ Check the \releases\ directory for pre-made IPS patch files. Further instructions are available in the `README.md` file there.
 
-Known issues:
-- It doesn't seem to behave consistently after dying and restarting from a checkpoint. On certain checkpoints it'll reset the timer, on others it won't.
-- Small graphical glitches elsewhere (like on title screen, sometimes)
-- In level 9 the timer automatically displays as you enter every door. Not necessarily an issue, but an unintended side-effect.
+
+## How to build/apply changes:
+
+### Building IPS patches:
+ Building patches requires Python 3.0+ installed, but does not require a ROM to produce the IPS patches.
+
+1. Download and install Python 3+ from https://python.org. Windows users will need to set the PATH environmental variable to point to their Python installation folder.
+2. Run `build_ips.bat` to create IPS patch files.
+3. Locate the patch files in the \build\ folder.
+
+### Building a patched ROM:
+
+1. Rename your unheadered TLK rom to `LionKing.sfc` and place it in the \build\ folder.
+2. Run `build_rom.bat` to generate a patched practice rom in the \build\ folder.
+
+
+## Features included:
+
+- Pause menu (Start+Select by default) to access practice features anytime during gameplay
+- Ability to save and reload instantly during gameplay (on supported platforms)
+- Level timer displayed on the HUD at level completion, when Select is pressed, or when the final attack on Scar is executed
+- Tracking for fastest level completion times across each difficulty
+- Customizable controller shortcuts
+- Simba menu to set values such as health, roar, invulnerability, and more
+- Level select menu lets you load any level and edit checkpoint positions freely
+- Memory editor tools
+- Option to skip directly to the title screen on boot/reset
+- Options to skip death and story cutscenes
+- Option to automatically load a savestate upon death
+- Options to load, preserve, or cycle the RNG when loading savestates
+- Access to the game's own options within the practice menu
+
+## Special thanks:
+
+- The practice menu, controller shortcuts, and savestates are forked from Super Metroid's practice hack found at [github.com/tewtal/sm_practice_hack](https://github.com/tewtal/sm_practice_hack). Modifications were made to fit Lion King.
+
+
+## Known Issues:
+ The following issues are known and will require additional disassembly work to fix. Submit a pull request if you have the assembly skills to fix them.
+
+- Savestates are not capable of adjusting music for certain levels. This may lead to game crashes due to a desync between the main and audio processors. The first Hyena fight, as well as Pride Rock, are known to cause issues. Avoid music changes when using savestates in these areas.

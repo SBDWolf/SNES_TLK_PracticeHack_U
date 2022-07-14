@@ -17,7 +17,7 @@ org $C0A2FE
     NOP
 
 ; Hijack level complete to stop timer and run TimeAttack
-; Pride Rock covered by cutscene skip hijack
+; Pridelands covered by cutscene skip hijack
 org $C0D1CB ; Roar at Monkeys, STA !LK_Loading_Trigger
     JSL LevelCompleteHijack_RoarMonkeys
 

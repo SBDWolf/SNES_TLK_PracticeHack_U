@@ -969,8 +969,8 @@ crash_tilemap_transfer:
 crash_next_frame:
 {
     PHP : %a8()
-    LDA $7E0A0A
--   CMP $7E0A0A : BEQ -
+    LDA !LK_NMI_Counter
+-   CMP !LK_NMI_Counter : BEQ -
     PLP
     RTL
 }

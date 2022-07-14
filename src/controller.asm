@@ -106,27 +106,31 @@ ControllerShortcuts:
   .savestate
     PHP : %ai16()
     PHB
+if !FEATURE_SAVESTATES
     JSL save_state
+endif
     PLB : PLP
-    BRA .return
+    RTL
 
   .loadstate
     PHP : %ai16()
     PHB
+if !FEATURE_SAVESTATES
     JSL load_state
+endif
     PLB : PLP
-    BRA .return
+    RTL
 
   .restart_level
     ; negative to load from LK_Next_Level
     LDA #$FFFF : STA !LK_Loading_Trigger
     LDA !LK_Current_Level : STA !LK_Next_Level
-    BRA .return
+    RTL
 
   .kill_simba
     LDA #$FFFF : STA !LK_Simba_Health
     STA !LK_Skip_Death_Scene
-    BRA .return
+    RTL
 
   .next_level
     ; Bonus minigames would crash
@@ -134,13 +138,41 @@ ControllerShortcuts:
     CMP #$000E : BMI .fail
   .safe
     LDA #$0001 : STA !LK_Loading_Trigger
-    BRA .return
+    RTL
   .fail
 ;    %sfxfail()
-    BRA .return
+    RTL
 
   .menu
     JSL cm_start
-    BRA .return
+    RTL
+
+  .timeControl
+    CMP !CTRL_LEFT : BEQ .resume
+    CMP !CTRL_RIGHT : BEQ .pause
+    CMP !CTRL_UP : BEQ .speedup
+    CMP !CTRL_DOWN : BEQ .slowdown
+    RTL
+  .resume
+    LDA #$0000 : STA !ram_TimeControl_mode
+    STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
+  .pause
+    ; frame advance if already paused
+    LDA !ram_TimeControl_mode : BMI .frameAdvance
+    LDA #$FFFF : STA !ram_TimeControl_mode
+    RTL
+  .frameAdvance
+    LDA #$FFFE : STA !ram_TimeControl_mode
+    RTL
+  .speedup
+    LDA !ram_TimeControl_frames : BEQ .fail
+    DEC : STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
+  .slowdown
+    LDA #$0001 : STA !ram_TimeControl_mode
+    LDA !ram_TimeControl_mode : CMP #$000A : BPL .fail
+    LDA !ram_TimeControl_frames : INC : STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
 }
 print pc, " ControllerShortcuts end"

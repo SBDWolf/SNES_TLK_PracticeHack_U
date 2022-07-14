@@ -75,17 +75,18 @@ post_load_state:
     LDA !SRAM_SAVED_AUDIO_6F : STA $1F6F
     LDA !SRAM_SAVED_AUDIO_C5 : STA $1FC5
 
-    LDA !LK_Current_Level : CMP !SRAM_SAVED_LEVEL : BEQ +
+    LDA !LK_Current_Level : CMP !SRAM_SAVED_LEVEL : BEQ .registers
+    ; load music and repeat loadstate if level changed
     %a16()
     JSL Play_Level_Music
     LDA #$FFFF : STA !ram_loadstate_repeat ; jankness
     RTS
-    %a8()
 
+  .registers
     ; OBJ/BG1/BG2 enabled
     ; we're just guessing here but seems consistent so far
     ; title menu could use work here, it uses BG3
-+   LDA #$13 : STA $212C
+    LDA #$13 : STA $212C
 
   .setRNG
     %ai16()

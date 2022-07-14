@@ -241,8 +241,6 @@ org $7E200A : LK_Lives_HUD:
 org $7E2430 : LK_BugHunt_Flag:
 org $7E2432 : LK_BugToss_Flag:
 
-org $7EA68E : LK_RNG_Result:
-
 org $7EA692 : LK_Loading_Trigger:
 
 org $7EA6BA : LK_Skip_Death_Scene:

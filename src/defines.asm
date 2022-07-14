@@ -290,6 +290,7 @@ endif
 !LK_Exile_Cutscene = $00FA
 
 !LK_4200_NMIEnable = $0A08
+!LK_NMI_Counter = $0A0A
 
 !LK_Title_Screen = $0A4E
 

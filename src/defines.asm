@@ -129,6 +129,9 @@ endif
 !ram_levelselect_target = !WRAM_START+$02
 !ram_levelselect_nexttarget = !WRAM_START+$04
 !ram_TimeAttack_DoNotRecord = !WRAM_START+$06
+!ram_TimeControl_mode = !WRAM_START+$08
+!ram_TimeControl_frames = !WRAM_START+$0A
+!ram_TimeControl_timer = !WRAM_START+$0C
 
 !ram_death_loops = !WRAM_START+$10
 !ram_play_music_track = !WRAM_START+$12
@@ -159,8 +162,11 @@ endif
 !ram_draw_value = !WRAM_START+$60
 !ram_mem_line_position = !WRAM_START+$62
 !ram_mem_loop_counter = !WRAM_START+$64
-
-; FREE SPACE ^ up to +$6E
+!ram_TimeControl_P1 = !WRAM_START+$66
+!ram_TimeControl_P2 = !WRAM_START+$68
+!LK_Controller_P2New = !WRAM_START+$6A
+!LK_Controller_P2Current = !WRAM_START+$6C
+!LK_Controller_P2Filtered = !WRAM_START+$6E
 
 !ram_hex2dec_first_digit = !WRAM_START+$70
 !ram_hex2dec_second_digit = !WRAM_START+$72
@@ -205,6 +211,8 @@ endif
 !sram_fast_boot = !SRAM_START+$2A
 !sram_savestate_rng = !SRAM_START+$2C
 !sram_loadstate_death = !SRAM_START+$2E
+!sram_loadstate_freeze = !SRAM_START+$30
+!sram_loadstate_delay = !SRAM_START+$32
 
 ; FREE SPACE ^
 
@@ -290,6 +298,7 @@ endif
 !LK_Exile_Cutscene = $00FA
 
 !LK_4200_NMIEnable = $0A08
+!LK_NMI_Counter = $0A0A
 
 !LK_Title_Screen = $0A4E
 

@@ -119,8 +119,14 @@ org !WRAM_START+$00 : ram_levelselect_enable:
 org !WRAM_START+$02 : ram_levelselect_target:
 org !WRAM_START+$04 : ram_levelselect_nexttarget:
 org !WRAM_START+$06 : ram_TimeAttack_DoNotRecord:
+org !WRAM_START+$08 : ram_TimeControl_mode:
+org !WRAM_START+$0A : ram_TimeControl_frames:
+org !WRAM_START+$0C : ram_TimeControl_timer:
 
 org !WRAM_START+$10 : ram_death_loops:
+org !WRAM_START+$12 : ram_play_music_track:
+org !WRAM_START+$14 : ram_play_sfx:
+org !WRAM_START+$16 : ram_loadstate_repeat:
 
 
 
@@ -146,6 +152,10 @@ org !WRAM_START+$5E : ram_mem_editor_lo:
 org !WRAM_START+$60 : ram_draw_value:
 org !WRAM_START+$62 : ram_mem_line_position:
 org !WRAM_START+$64 : ram_mem_loop_counter:
+
+org !WRAM_START+$6A : LK_Controller_P2New:
+org !WRAM_START+$6C : LK_Controller_P2Current:
+org !WRAM_START+$6E : LK_Controller_P2Filtered:
 
 org !WRAM_START+$70 : ram_hex2dec_first_digit:
 org !WRAM_START+$72 : ram_hex2dec_second_digit:
@@ -174,7 +184,11 @@ org !SRAM_START+$22 : sram_options_control_type:
 org !SRAM_START+$24 : sram_options_music:
 org !SRAM_START+$26 : sram_options_sfx:
 org !SRAM_START+$28 : sram_skip_cutscenes:
-org !SRAM_START+$2A : sram_savestate_rng:
+org !SRAM_START+$2A : sram_fast_boot:
+org !SRAM_START+$2C : sram_savestate_rng:
+org !SRAM_START+$2E : sram_loadstate_death:
+org !SRAM_START+$30 : sram_loadstate_freeze:
+org !SRAM_START+$32 : sram_loadstate_delay:
 
 org !SRAM_START+$E0 : sram_pal_profile:
 org !SRAM_START+$E2 : sram_cm_cgram:
@@ -240,8 +254,6 @@ org $7E200A : LK_Lives_HUD:
 
 org $7E2430 : LK_BugHunt_Flag:
 org $7E2432 : LK_BugToss_Flag:
-
-org $7EA68E : LK_RNG_Result:
 
 org $7EA692 : LK_Loading_Trigger:
 

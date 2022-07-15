@@ -4,7 +4,7 @@
 
 ; The menu makes heavy use of direct page (DP) indirect addressing.
 ; The value stored in the DP address is treated as a pointer,
-; and the value at that pointer is loaded instead.
+; and the value at that pointer address is loaded instead.
 ; [Square brackets] indicate long addressing, and a third byte
 ; of DP is used as the bank byte for 24bit addressing.
 
@@ -47,7 +47,9 @@ cm_start:
     PHX : PHY
 
     ; set DB to zero
-    LDA #$0000 : PHA : PLB : PLB
+    PEA $0000 : PLB : PLB
+
+    LDA !ram_TimeControl_mode : PHA
 
     JSR cm_init
 
@@ -55,6 +57,8 @@ cm_start:
     JSR cm_loop
 
     JSR cm_exit
+
+    PLA : STA !ram_TimeControl_mode
 
     PLY : PLX
     PLB : PLD
@@ -90,20 +94,20 @@ cm_init:
     LDA #$0000 : STA !ram_cm_leave
     STA !ram_cm_stack_index : STA !ram_cm_cursor_stack
     STA !ram_cm_ctrl_mode : STA !ram_cm_ctrl_timer
-    STA !ram_mem_editor_active
+    STA !ram_mem_editor_active : STA !ram_TimeControl_mode
 
     LDA #MainMenu : STA !ram_cm_menu_stack
     LDA.w #MainMenu>>16 : STA !ram_cm_menu_bank
     LDA #$000E : STA !ram_cm_input_timer
-    LDA $0A0A : STA !ram_cm_input_counter ; $0A0A = NMI counter
+    LDA !LK_NMI_Counter : STA !ram_cm_input_counter
     LDA #$0001 : STA !ram_menu_active ; can be used to detect if the menu is active
 
     ; Choose background tile (clear or solid)
     LDA !sram_menu_background : BNE .background
-    LDA #$0140
+    LDA #$0140 ; clear
     BRA +
   .background
-    LDA #$2540
+    LDA #$2540 ; solid
 +   STA !ram_cm_blank_tile
 
     ; Init menu variables from game variables
@@ -292,8 +296,8 @@ cm_transfer_original_cgram:
 cm_draw:
 {
     PHP : %ai16()
-    JSR cm_tilemap_bg
-    JSR cm_tilemap_menu
+    JSL cm_tilemap_bg
+    JSL cm_tilemap_menu
     JSL cm_memory_editor
     JSL NMI_tilemap_transfer
     PLP
@@ -342,7 +346,7 @@ cm_tilemap_bg:
     INX #2
     DEY : BPL -
 
-    RTS
+    RTL
 }
 
 cm_tilemap_menu:
@@ -403,11 +407,11 @@ cm_tilemap_menu:
     INC $44 : INC $44 : STZ $3E
     LDX #$0606
     JSR cm_draw_text
-    RTS
+    RTL
 
   .done
     DEC $44 : DEC $44
-    RTS
+    RTL
 }
 
 NMI_tilemap_transfer:
@@ -1426,6 +1430,37 @@ cm_move:
   .end
 ;    %sfxmove()
     RTS
+}
+
+action_mainmenu:
+{
+    PHB
+    ; Set bank of new menu
+    LDA !ram_cm_cursor_stack : TAX
+    LDA.l MainMenuBanks,X : STA !ram_cm_menu_bank
+    STA $42 : STA $46
+
+    BRA action_submenu_skipStackOp
+}
+
+action_submenu:
+{
+    PHB
+  .skipStackOp
+    ; Increment stack pointer by 2, then store current menu
+    LDA !ram_cm_stack_index : INC #2 : STA !ram_cm_stack_index : TAX
+    TYA : STA !ram_cm_menu_stack,X
+
+  .jump
+    LDA #$0000 : STA !ram_cm_cursor_stack,X
+
+;    %sfxmove()
+    JSL cm_calculate_max
+    JSL cm_colors
+    JSL cm_draw
+
+    PLB
+    RTL
 }
 
 

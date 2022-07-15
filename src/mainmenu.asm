@@ -2,40 +2,8 @@
 org $F08000
 print pc, " mainmenu.asm start"
 
-; These main/submenu routines must
-; live in te same bank as MainMenu
-action_mainmenu:
-{
-    PHB
-    ; Set bank of new menu
-    LDA !ram_cm_cursor_stack : TAX
-    LDA.l MainMenuBanks,X : STA !ram_cm_menu_bank
-    STA $42 : STA $46
-
-    BRA action_submenu+1
-}
-
-action_submenu:
-{
-    PHB
-    ; Increment stack pointer by 2, then store current menu
-    LDA !ram_cm_stack_index : INC #2 : STA !ram_cm_stack_index : TAX
-    TYA : STA !ram_cm_menu_stack,X
-}
-
-action_submenu_jump:
-{
-    LDA #$0000 : STA !ram_cm_cursor_stack,X
-
-;    %sfxmove()
-    JSL cm_calculate_max
-    JSL cm_colors
-    JSL cm_draw
-
-    PLB
-    RTL
-}
-
+; MainMenu must live in the same bank as the core menu code
+; From here, submenus can branch off into any bank
 
 MainMenu:
     dw #mm_goto_simba
@@ -53,11 +21,9 @@ endif
     dw #$0000
     %cm_version_header("LION KING PRACTICE", !VERSION_MAJOR, !VERSION_MINOR, !VERSION_BUILD, !VERSION_REV_1, !VERSION_REV_2)
 if !DEV_BUILD
-    %cm_footer("BETA DEVELOPMENT BUILD")
-elseif !FEATURE_SAVESTATES
-    %cm_footer("BETA SAVESTATE BUILD")
+    %cm_footer("DEVELOPMENT BUILD")
 else
-    %cm_footer("BETA BUILD")
+    %cm_footer("  LKPRACTICE.SPAZER.LINK")
 endif
 
 MainMenuBanks:
@@ -90,13 +56,11 @@ mm_goto_settings:
 mm_goto_memoryeditor:
     %cm_jsl("Memory Editor", .routine, MemoryEditorMenu)
   .routine
-    PHY ; menu pointer in Y
-    LDA !ram_mem_address
-    %a8()
-    STA !ram_mem_address_lo : XBA : STA !ram_mem_address_hi
-    %a16()
-    LDA #$0001 : STA !ram_mem_editor_active
-    JSR cm_tilemap_bg
+    ; we need to setup some variables before the menu is loaded
+    PHY ; preserve menu pointer in Y
+    JSL cm_editor_menu_prep
+
+    ; manual submenu jump
     %setmenubank()
     PLY
     JML action_submenu
@@ -530,8 +494,7 @@ SettingsMenu:
     dw #cutscenes_fastboot
 if !FEATURE_SAVESTATES
     dw #$FFFF
-    dw #savestate_rng
-    dw #loadstate_death
+    dw #options_goto_savestate
 endif
     dw #$0000
     %cm_header("SETTINGS MENU")
@@ -589,6 +552,22 @@ cutscenes_bonus:
 
 cutscenes_fastboot:
     %cm_toggle("Fast Boot/Reset", !sram_fast_boot, #$0001, #0)
+
+options_goto_savestate:
+    %cm_submenu("Savestate Settings", #SavestateSettingsMenu)
+
+
+; ----------
+; Savestates
+; ----------
+
+SavestateSettingsMenu:
+    dw #savestate_rng
+    dw #loadstate_death
+    dw #loadstate_freeze
+    dw #loadstate_delay
+    dw #$0000
+    %cm_header("SAVESTATE SETTINGS")
     
 savestate_rng:
     dw !ACTION_CHOICE
@@ -602,6 +581,12 @@ savestate_rng:
 
 loadstate_death:
     %cm_toggle("Loadstate on Death", !sram_loadstate_death, #$0001, #0)
+
+loadstate_freeze:
+    %cm_toggle("Freeze on Loadstate", !sram_loadstate_freeze, #$0001, #0)
+
+loadstate_delay:
+    %cm_numfield("Loadstate Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
 
 
 ; ----------

@@ -70,6 +70,23 @@ memory_edit_write:
     RTL
 
 
+cm_editor_menu_prep:
+{
+    LDA #$0001 : STA !ram_mem_editor_active
+
+    ; split address hi and lo
+    LDA !ram_mem_address
+    %a8()
+    STA !ram_mem_address_lo : XBA : STA !ram_mem_address_hi
+    %a16()
+
+    ; clear tilemap
+    JSL cm_tilemap_bg
+
+    RTL
+}
+
+
 cm_memory_editor:
 ; Draws the memory values identified by the last digit of the 24-bit address
 {
@@ -102,7 +119,7 @@ cm_memory_editor:
     ; draw the 16-bit hex value at address
     LDX #$042A : JSL cm_draw4_hex
     LDX #$0468 : JSL cm_draw5
-    BRA .continue
+    BRA .labels
 
   .eight_bit
     ; draw the 8-bit hex value at address
@@ -110,7 +127,7 @@ cm_memory_editor:
     LDX #$042A : JSL cm_draw2_hex
     LDX #$0468 : JSL cm_draw3
 
-  .continue
+  .labels
     ; bunch of $ symbols
     LDA #$295F : STA !ram_tilemap_buffer+$172 ; $Bank
     LDA #$295F : STA !ram_tilemap_buffer+$1B2 ; $High

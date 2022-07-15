@@ -23,12 +23,16 @@ ReadControllerInputs:
 {
     %a8()
     LDA $4218 : STA.w !LK_Controller_Filtered
-    ; determine new inputs (low)
+    ; determine new inputs (p1 low)
     EOR.w !LK_Controller_Current : AND.w !LK_Controller_Filtered : STA !LK_Controller_New
 
     LDA $4219 : STA.w !LK_Controller_Filtered+1
-    ; determine new inputs (high)
+    ; determine new inputs (p1 high)
     EOR.w !LK_Controller_Current+1 : AND.w !LK_Controller_Filtered+1 : STA.w !LK_Controller_New+1
+
+    LDA $421B : STA.w !LK_Controller_P2Filtered+1
+    ; determine new inputs (p2 high)
+    EOR.w !LK_Controller_P2Current+1 : AND.w !LK_Controller_P2Filtered+1 : STA.w !LK_Controller_P2New+1
 
     %a16()
     LDA.w !LK_Controller_Filtered : AND #$000F : BEQ +
@@ -49,6 +53,7 @@ ReadControllerInputs:
     LDA.w !LK_Controller_Current : AND $0060 : EOR #$FFFF : STA $001B
     LDA.w !LK_Controller_Filtered : STA.w !LK_Controller_Current
     AND $001B : STA.w !LK_Controller_Filtered
+    LDA.w !LK_Controller_P2Filtered : STA.w !LK_Controller_P2Current
 
     JSL ControllerShortcuts
 
@@ -64,11 +69,15 @@ print pc, " ControllerShortcuts start"
 ControllerShortcuts:
 {
     ; no shortcuts allowed in menu
-    LDA !ram_menu_active : BEQ +
+    LDA !ram_menu_active : BEQ .p2Inputs
     RTL
 
-    ; check if new inputs
-+   LDA !LK_Controller_New : BNE +
+  .p2Inputs
+    LDA !LK_Controller_P2New : AND #$0F00 : BEQ .newInputs
+    BRL .timeControl
+
+  .newInputs
+    LDA !LK_Controller_New : BNE +
     RTL
 
 +   LDA !LK_Controller_Current : AND !sram_ctrl_save_state : CMP !sram_ctrl_save_state : BNE +
@@ -106,27 +115,31 @@ ControllerShortcuts:
   .savestate
     PHP : %ai16()
     PHB
+if !FEATURE_SAVESTATES
     JSL save_state
+endif
     PLB : PLP
-    BRA .return
+    RTL
 
   .loadstate
     PHP : %ai16()
     PHB
+if !FEATURE_SAVESTATES
     JSL load_state
+endif
     PLB : PLP
-    BRA .return
+    RTL
 
   .restart_level
     ; negative to load from LK_Next_Level
     LDA #$FFFF : STA !LK_Loading_Trigger
     LDA !LK_Current_Level : STA !LK_Next_Level
-    BRA .return
+    RTL
 
   .kill_simba
     LDA #$FFFF : STA !LK_Simba_Health
     STA !LK_Skip_Death_Scene
-    BRA .return
+    RTL
 
   .next_level
     ; Bonus minigames would crash
@@ -134,13 +147,41 @@ ControllerShortcuts:
     CMP #$000E : BMI .fail
   .safe
     LDA #$0001 : STA !LK_Loading_Trigger
-    BRA .return
+    RTL
   .fail
 ;    %sfxfail()
-    BRA .return
+    RTL
 
   .menu
     JSL cm_start
-    BRA .return
+    RTL
+
+  .timeControl
+    CMP !CTRL_LEFT : BEQ .resume
+    CMP !CTRL_RIGHT : BEQ .pause
+    CMP !CTRL_UP : BEQ .speedup
+    CMP !CTRL_DOWN : BEQ .slowdown
+    RTL
+  .resume
+    LDA #$0000 : STA !ram_TimeControl_mode
+    STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
+  .pause
+    ; frame advance if already paused
+    LDA !ram_TimeControl_mode : BMI .frameAdvance
+    LDA #$FFFF : STA !ram_TimeControl_mode
+    RTL
+  .frameAdvance
+    LDA #$FFFE : STA !ram_TimeControl_mode
+    RTL
+  .speedup
+    LDA !ram_TimeControl_frames : BEQ .fail
+    DEC : STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
+  .slowdown
+    LDA #$0001 : STA !ram_TimeControl_mode
+    LDA !ram_TimeControl_mode : CMP #$000A : BPL .fail
+    LDA !ram_TimeControl_frames : INC : STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    RTL
 }
 print pc, " ControllerShortcuts end"

@@ -88,6 +88,27 @@ post_load_state:
     ; title menu could use work here, it uses BG3
     LDA #$13 : STA $212C
 
+    ; optional freeze on load
+    LDA !sram_loadstate_freeze : BEQ .setRNG
+    ; fake an NMI to update the screen
+    LDA #$80 : STA $802100 ; enable forced blanking
+    PHK : PEA .NMIreturn : PHP ; push RTI-style return
+    JML $009E08 ; NMI
+  .NMIreturn
+    LDA #$0F : STA $0F2100 ; disable forced blanking
+    %a16()
+
+    LDA !sram_loadstate_delay : BEQ +
+    ; unfreeze when delay timer expires
+    STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    LDA #$0002 : STA !ram_TimeControl_mode
+    BRA .setRNG
+
+    ; wait for new inputs if delay is zero
++   LDA #$0010 : STA !ram_TimeControl_mode
+    LDA #$0000
+    STA !LK_Controller_Current : STA !LK_Controller_New : STA !LK_Controller_Filtered
+
   .setRNG
     %ai16()
     ; which RNG values to use?

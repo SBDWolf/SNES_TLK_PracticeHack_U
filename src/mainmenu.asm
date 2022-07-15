@@ -494,8 +494,7 @@ SettingsMenu:
     dw #cutscenes_fastboot
 if !FEATURE_SAVESTATES
     dw #$FFFF
-    dw #savestate_rng
-    dw #loadstate_death
+    dw #options_goto_savestate
 endif
     dw #$0000
     %cm_header("SETTINGS MENU")
@@ -553,6 +552,22 @@ cutscenes_bonus:
 
 cutscenes_fastboot:
     %cm_toggle("Fast Boot/Reset", !sram_fast_boot, #$0001, #0)
+
+options_goto_savestate:
+    %cm_submenu("Savestate Settings", #SavestateSettingsMenu)
+
+
+; ----------
+; Savestates
+; ----------
+
+SavestateSettingsMenu:
+    dw #savestate_rng
+    dw #loadstate_death
+    dw #loadstate_freeze
+    dw #loadstate_delay
+    dw #$0000
+    %cm_header("SAVESTATE SETTINGS")
     
 savestate_rng:
     dw !ACTION_CHOICE
@@ -566,6 +581,12 @@ savestate_rng:
 
 loadstate_death:
     %cm_toggle("Loadstate on Death", !sram_loadstate_death, #$0001, #0)
+
+loadstate_freeze:
+    %cm_toggle("Freeze on Loadstate", !sram_loadstate_freeze, #$0001, #0)
+
+loadstate_delay:
+    %cm_numfield("Loadstate Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
 
 
 ; ----------

@@ -1,4 +1,8 @@
 
+; Hijack NMI to handle time control
+org $C09E16
+    JML NMITimeControl
+
 
 ; Hijack NMI to inc/draw timer
 org $C09E6D
@@ -66,6 +70,72 @@ IgnoreMinorTransition_return:
 
 org $F10000
 print pc, " timer.asm start"
+
+NMITimeControl:
+; The idle routine refuses to return until its flag has been flipped in NMI
+; By short circuiting NMI, we can delay gameplay processing by a frame
+{
+    ; overwritten code
+    LDX #$00 : PHX : PLB
+
+    LDA !ram_TimeControl_mode : BNE .timeControl
+    JML $C09E1A ; return to NMI
+
+  .timeControl
+    ; Modes: 0001 = slowdown, 0002 = loadstate timer, 0010 = loadstate waits for input
+    ;        FFFE = frame advance, FFFF = pause
+    CMP #$FFFF : BEQ .pause
+    LDA !ram_TimeControl_mode : BMI .frameAdvance
+    CMP #$0001 : BNE .loadstateFreeze
+    LDA !ram_TimeControl_timer : BNE .slowdown
+
+  .reset
+    ; reset countdown and restore inputs
+    LDA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    LDA !ram_TimeControl_P1 : STA !LK_Controller_Current : STA !LK_Controller_New
+    LDA !ram_TimeControl_P2 : STA !LK_Controller_P2Current
+    JML $C09E1A ; return to NMI
+
+  .pause
+    LDA !LK_Controller_Current : STA !ram_TimeControl_P1
+    LDA !LK_Controller_P2Current : STA !ram_TimeControl_P2
+    JSL ReadControllerInputs_long
+    %ai16()
+    JML $C09EBF ; skip NMI
+
+  .frameAdvance
+    LDA #$FFFF : STA !ram_TimeControl_mode
+    JML $C09E1A ; return to NMI
+
+  .slowdown
+    LDA !ram_TimeControl_frames : BEQ .pause
+    LDA !ram_TimeControl_timer : DEC : STA !ram_TimeControl_timer
+    JSL ReadControllerInputs_long
+    %ai16()
+    JML $C09EBF ; skip NMI
+
+  .loadstateFreeze
+    LDA !ram_TimeControl_mode : CMP #$0010 : BEQ .wait4Input
+    ; countdown delay timer
+    LDA !ram_TimeControl_timer : BEQ .unfreeze
+    DEC : STA !ram_TimeControl_timer
+    JSL ReadControllerInputs_long
+    %ai16()
+    JML $C09EBF ; skip NMI
+
+  .wait4Input
+    LDA !LK_Controller_New : BNE .unfreeze
+    JSL ReadControllerInputs_long
+    %ai16()
+    JML $C09EBF ; skip NMI
+
+  .unfreeze
+    LDA #$0000 : STA !ram_TimeControl_mode
+    STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
+    JML $C09E1A ; return to NMI
+}
+
+
 RedrawAndResetTimer:
 {
     PHP : %ai16()

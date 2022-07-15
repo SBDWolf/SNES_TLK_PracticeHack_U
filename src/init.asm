@@ -65,6 +65,8 @@ InitSRAM:
     LDA #$0000 : STA !sram_fast_boot
     LDA #$0000 : STA !sram_savestate_rng
     LDA #$0000 : STA !sram_loadstate_death
+    LDA #$0000 : STA !sram_loadstate_freeze
+    LDA #$0000 : STA !sram_loadstate_delay
 
     ; Menu customization
     LDA #$0001 : STA !sram_pal_profile

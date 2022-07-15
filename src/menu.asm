@@ -49,12 +49,16 @@ cm_start:
     ; set DB to zero
     PEA $0000 : PLB : PLB
 
+    LDA !ram_TimeControl_mode : PHA
+
     JSR cm_init
 
     JSL cm_draw
     JSR cm_loop
 
     JSR cm_exit
+
+    PLA : STA !ram_TimeControl_mode
 
     PLY : PLX
     PLB : PLD
@@ -90,7 +94,7 @@ cm_init:
     LDA #$0000 : STA !ram_cm_leave
     STA !ram_cm_stack_index : STA !ram_cm_cursor_stack
     STA !ram_cm_ctrl_mode : STA !ram_cm_ctrl_timer
-    STA !ram_mem_editor_active
+    STA !ram_mem_editor_active : STA !ram_TimeControl_mode
 
     LDA #MainMenu : STA !ram_cm_menu_stack
     LDA.w #MainMenu>>16 : STA !ram_cm_menu_bank

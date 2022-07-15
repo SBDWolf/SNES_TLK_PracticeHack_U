@@ -23,12 +23,16 @@ ReadControllerInputs:
 {
     %a8()
     LDA $4218 : STA.w !LK_Controller_Filtered
-    ; determine new inputs (low)
+    ; determine new inputs (p1 low)
     EOR.w !LK_Controller_Current : AND.w !LK_Controller_Filtered : STA !LK_Controller_New
 
     LDA $4219 : STA.w !LK_Controller_Filtered+1
-    ; determine new inputs (high)
+    ; determine new inputs (p1 high)
     EOR.w !LK_Controller_Current+1 : AND.w !LK_Controller_Filtered+1 : STA.w !LK_Controller_New+1
+
+    LDA $421B : STA.w !LK_Controller_P2Filtered+1
+    ; determine new inputs (p2 high)
+    EOR.w !LK_Controller_P2Current+1 : AND.w !LK_Controller_P2Filtered+1 : STA.w !LK_Controller_P2New+1
 
     %a16()
     LDA.w !LK_Controller_Filtered : AND #$000F : BEQ +
@@ -49,6 +53,7 @@ ReadControllerInputs:
     LDA.w !LK_Controller_Current : AND $0060 : EOR #$FFFF : STA $001B
     LDA.w !LK_Controller_Filtered : STA.w !LK_Controller_Current
     AND $001B : STA.w !LK_Controller_Filtered
+    LDA.w !LK_Controller_P2Filtered : STA.w !LK_Controller_P2Current
 
     JSL ControllerShortcuts
 
@@ -64,11 +69,15 @@ print pc, " ControllerShortcuts start"
 ControllerShortcuts:
 {
     ; no shortcuts allowed in menu
-    LDA !ram_menu_active : BEQ +
+    LDA !ram_menu_active : BEQ .p2Inputs
     RTL
 
-    ; check if new inputs
-+   LDA !LK_Controller_New : BNE +
+  .p2Inputs
+    LDA !LK_Controller_P2New : AND #$0F00 : BEQ .newInputs
+    BRL .timeControl
+
+  .newInputs
+    LDA !LK_Controller_New : BNE +
     RTL
 
 +   LDA !LK_Controller_Current : AND !sram_ctrl_save_state : CMP !sram_ctrl_save_state : BNE +

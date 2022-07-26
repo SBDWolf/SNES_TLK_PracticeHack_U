@@ -131,6 +131,8 @@ endif
     RTL
 
   .restart_level
+    ; make sure level time gets recorded
+    LDA #$0000 : STA !ram_TimeAttack_DoNotRecord
     ; negative to load from LK_Next_Level
     LDA #$FFFF : STA !LK_Loading_Trigger
     LDA !LK_Current_Level : STA !LK_Next_Level

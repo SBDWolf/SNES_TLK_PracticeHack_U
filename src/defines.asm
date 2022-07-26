@@ -9,7 +9,7 @@ endif
 
 !VERSION_MAJOR = 2
 !VERSION_MINOR = 0
-!VERSION_BUILD = 0
+!VERSION_BUILD = 1
 !VERSION_REV_1 = 0
 !VERSION_REV_2 = 0
 
@@ -128,10 +128,11 @@ endif
 !ram_levelselect_enable = !WRAM_START+$00
 !ram_levelselect_target = !WRAM_START+$02
 !ram_levelselect_nexttarget = !WRAM_START+$04
-!ram_TimeAttack_DoNotRecord = !WRAM_START+$06
-!ram_TimeControl_mode = !WRAM_START+$08
-!ram_TimeControl_frames = !WRAM_START+$0A
-!ram_TimeControl_timer = !WRAM_START+$0C
+!ram_levelselect_checkpoint = !WRAM_START+$06
+!ram_TimeAttack_DoNotRecord = !WRAM_START+$08
+!ram_TimeControl_mode = !WRAM_START+$0A
+!ram_TimeControl_frames = !WRAM_START+$0C
+!ram_TimeControl_timer = !WRAM_START+$0E
 
 !ram_death_loops = !WRAM_START+$10
 !ram_play_music_track = !WRAM_START+$12

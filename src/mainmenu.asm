@@ -23,7 +23,7 @@ endif
 if !DEV_BUILD
     %cm_footer("DEVELOPMENT BUILD")
 else
-    %cm_footer("  LKPRACTICE.SPAZER.LINK")
+    %cm_footer("LKPRACTICE.SPAZER.LINK")
 endif
 
 MainMenuBanks:
@@ -163,6 +163,7 @@ LevelSelectMenu:
     dw #levelselect_level
     dw #levelselect_execute
     dw #$FFFF
+    dw #levelselect_checkpoint_list
     dw #levelselect_checkpoint_X
     dw #levelselect_checkpoint_Y
     dw #levelselect_checkpoint_current
@@ -206,6 +207,9 @@ levelselect_execute:
     LDA !ram_levelselect_target : TAY
     JMP levelselect_execute_list
     RTL
+
+levelselect_checkpoint_list:
+    %cm_submenu("Checkpoint Load - List View", CheckpointListMenu)
 
 levelselect_checkpoint_X:
     %cm_numfield_word("Set Checkpoint X", !LK_Checkpoint_X, 0, 8192, 1, 32, #0)
@@ -349,6 +353,100 @@ levelselect_execute_list:
     STA !LK_Loading_Trigger
     STA !ram_cm_leave
     RTL
+}
+
+CheckpointListMenu:
+    dw #CheckpointList_Pridelands_midway
+    dw #CheckpointList_Pridelands_hyena
+    dw #$FFFF
+    dw #CheckpointList_RoarAtMonkeys_hippos
+    dw #CheckpointList_RoarAtMonkeys_monkeys
+    dw #$FFFF
+    dw #CheckpointList_ElephantGraveyard_geysers
+    dw #$FFFF
+    dw #CheckpointList_SimbasExile_clip
+    dw #$FFFF
+    dw #CheckpointList_HakunaMatata_top
+    dw #CheckpointList_HakunaMatata_boss
+    dw #$FFFF
+    dw #CheckpointList_SimbasDestiny_midway
+    dw #$FFFF
+    dw #CheckpointList_BePrepared_midway
+    dw #CheckpointList_BePrepared_final
+    dw #$0000
+    %cm_header("CHECKPOINT LOAD LIST")
+
+CheckpointList_Pridelands_midway:
+    %cm_jsl("The Pridelands - Midway", #levelselect_checkpoint_load, #$0000)
+
+CheckpointList_Pridelands_hyena:
+    %cm_jsl("The Pridelands - Hyena", #levelselect_checkpoint_load, #$0004)
+
+CheckpointList_RoarAtMonkeys_hippos:
+    %cm_jsl("Roar At Monkeys - Hippos", #levelselect_checkpoint_load, #$0108)
+
+CheckpointList_RoarAtMonkeys_monkeys:
+    %cm_jsl("Roar At Monkeys - Monkeys", #levelselect_checkpoint_load, #$010C)
+
+CheckpointList_ElephantGraveyard_geysers:
+    %cm_jsl("Elephant Graveyard - Geysers", #levelselect_checkpoint_load, #$0210)
+
+CheckpointList_SimbasExile_clip:
+    %cm_jsl("Simba's Exile - Clip", #levelselect_checkpoint_load, #$0414)
+
+CheckpointList_HakunaMatata_top:
+    %cm_jsl("Hakuna Matata - Top", #levelselect_checkpoint_load, #$0518)
+
+CheckpointList_HakunaMatata_boss:
+    %cm_jsl("Hakuna Matata - Gorilla", #levelselect_checkpoint_load, #$051C)
+
+CheckpointList_SimbasDestiny_midway:
+    %cm_jsl("Simba's Destiny - Midway", #levelselect_checkpoint_load, #$0620)
+
+CheckpointList_BePrepared_midway:
+    %cm_jsl("Be Prepared - Midway", #levelselect_checkpoint_load, #$0724)
+
+CheckpointList_BePrepared_final:
+    %cm_jsl("Be Prepared - Final", #levelselect_checkpoint_load, #$0728)
+
+levelselect_checkpoint_load:
+{
+    ; Y low byte = table index
+    TYA : AND #$00FF : TAX
+
+    ; load checkpoint coordinates from table
+    LDA.l CheckpointListTable,X : STA !LK_Checkpoint_X
+    INX #2
+    LDA.l CheckpointListTable,X : STA !LK_Checkpoint_Y
+
+    ; set flags
+    LDA #$0001
+    STA !ram_levelselect_checkpoint : STA !ram_TimeAttack_DoNotRecord
+
+    ; Y high byte = level index
+    TYA : AND #$FF00 : XBA : TAY
+    STA !LK_Current_Level : STA !LK_Next_Level
+    JML levelselect_execute_list
+
+CheckpointListTable:
+  .Pridelands        ; $00
+    dw $0290, $0250 ; $00 midway
+    dw $0490, $0070 ; $04 top
+  .RoarAtMonkeys     ; $01
+    dw $0B70, $01E0 ; $08 hippos
+    dw $1270, $01E0 ; $0C monkeys
+  .ElephantGraveyard ; $02
+    dw $0F60, $02C0 ; $10 geysers
+  .SimbasExile       ; $04
+    dw $04E0, $0830 ; $14 clip
+  .HakunaMatata      ; $05
+    dw $03B0, $0080 ; $18 top
+    dw $0B40, $0350 ; $1C gorilla
+  .SimbasDestiny     ; $06
+    dw $08C0, $0270 ; $20 midway
+  .BePrepared        ; $07
+    dw $1250, $0210 ; $24 midway
+    dw $0310, $0240 ; $28 final
 }
 
 

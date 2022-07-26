@@ -50,6 +50,11 @@ org $C53797
     JSL LevelLoadingHijack
 
 
+; Hijack to force loading from checkpoints
+org $C08673
+    JML CheckpointLoadingHijack
+
+
 ; Hijack to skip death cutscene
 org $C08A59
     JML DeathCutsceneSkip
@@ -132,6 +137,17 @@ LevelLoadingHijack:
     LDA #$0000 : STA !ram_TimeAttack_DoNotRecord
     LDA $00 : STA !LK_Current_Level
     RTL
+}
+
+CheckpointLoadingHijack:
+{
+    LDA !ram_levelselect_checkpoint : BNE .checkpoint
+    LDA !LK_Repeat_Level_Flag ; overwritten code
+    JML $C08677 ; load normally
+
+  .checkpoint
+    LDA #$0000 : STA !ram_levelselect_checkpoint
+    JML $C08693 ; load from checkpoint
 }
 
 

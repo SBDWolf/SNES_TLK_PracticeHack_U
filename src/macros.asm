@@ -1,26 +1,26 @@
 
 macro a8()
-    sep #$20
+    SEP #$20
 endmacro
 
 macro a16()
-    rep #$20
+    REP #$20
 endmacro
 
 macro i8()
-    sep #$10
+    SEP #$10
 endmacro
 
 macro ai8()
-    sep #$30
+    SEP #$30
 endmacro
 
 macro ai16()
-    rep #$30
+    REP #$30
 endmacro
 
 macro i16()
-    rep #$10
+    REP #$10
 endmacro
 
 macro wdm()

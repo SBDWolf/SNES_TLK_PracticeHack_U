@@ -227,19 +227,19 @@ DeathLoopProtection:
 
 
 Reset_PPU_Registers:
+; called by save/load routines
 {
     PHP : %ai16()
     LDA !LK_Current_Level : ASL : ADC !LK_Current_Level : TAX
     LDA $C00357,X : STA $DF
     %a8()
     LDA $C00359,X : STA $E1
-    LDA #$80 : STA $2100
-    STZ !LK_FadeInOut_Flag
+    LDA #$80 : STA $802100
     STZ $2106 : STZ $4200
     STZ $210B : STZ $210C
     LDA #$03 : STA $2101
     LDA #$09 : STA $2105
-    
+
     LDX $DF : CPX #$041D : BNE .not_041D
     LDA #$40 : STA $0A60 : STA $2107
     LDA #$4C : STA $2108

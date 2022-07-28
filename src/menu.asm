@@ -157,7 +157,15 @@ cm_exit:
     LDA #$0000 : STA !ram_menu_active
     JSL UpdateHUD
 
-    LDA #$0000 : STA !ram_menu_active
+    ; check if menu shortcut contains Start
+    LDA !sram_ctrl_menu : AND !CTRL_START : BEQ +
+    ; check for newly activated pause
+    LDA !LK_Pause_Flag : BEQ +
+    LDA !LK_Silence_Countdown : BEQ +
+    ; clear pause flag before exiting
+    STZ !LK_Pause_Flag : STZ !LK_Silence_Countdown
+
++   LDA #$0000 : STA !ram_menu_active
     STA !LK_Controller_Filtered : STA !LK_Controller_Current : STA !LK_Controller_New
 
     RTS

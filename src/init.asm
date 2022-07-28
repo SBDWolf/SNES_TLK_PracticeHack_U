@@ -58,30 +58,35 @@ InitSRAM_long:
 InitSRAM:
 {
     ; Default controller shortcuts
-    LDA #$3000 : STA !sram_ctrl_menu           ; Start + Select
-    LDA #$6010 : STA !sram_ctrl_save_state     ; Select + Y + R
-    LDA #$6020 : STA !sram_ctrl_load_state     ; Select + Y + L
+    LDA #$3000 : STA !sram_ctrl_menu            ; Start + Select
+    LDA #$2010 : STA !sram_ctrl_save_state      ; Select + R
+    LDA #$2020 : STA !sram_ctrl_load_state      ; Select + L
     LDA #$0000 : STA !sram_ctrl_restart_level
     LDA #$0000 : STA !sram_ctrl_next_level
     LDA #$0000 : STA !sram_ctrl_kill_simba
-    LDA #$3030 : STA !sram_ctrl_soft_reset     ; Start + Select + L + R
+    LDA #$3030 : STA !sram_ctrl_soft_reset      ; Start + Select + L + R
 
     ; Default settings
-    LDA #$0001 : STA !sram_options_difficulty
-    LDA #$0001 : STA !sram_options_music
-    LDA #$0001 : STA !sram_options_sfx
-    LDA #$0000 : STA !sram_options_control_type
-    LDA #$0000 : STA !sram_skip_cutscenes
-    LDA #$0000 : STA !sram_fast_boot
-    LDA #$0000 : STA !sram_savestate_rng
-    LDA #$0000 : STA !sram_loadstate_death
-    LDA #$0000 : STA !sram_loadstate_freeze
-    LDA #$0000 : STA !sram_loadstate_delay
-    LDA #$0001 : STA !sram_loadstate_redraw
+    LDA #$0000 : STA !sram_options_difficulty   ; Easy
+    LDA #$0001 : STA !sram_options_music        ; Stereo
+    LDA #$0001 : STA !sram_options_sfx          ; On
+    LDA #$0000 : STA !sram_options_control_type ; 0 - Default
+if !DEV_BUILD
+    LDA #$8006 : STA !sram_skip_cutscenes       ; Pride Off, rest On
+    LDA #$0001 : STA !sram_fast_boot            ; On
+else
+    LDA #$0000 : STA !sram_skip_cutscenes       ; All Off
+    LDA #$0000 : STA !sram_fast_boot            ; Off
+endif
+    LDA #$0000 : STA !sram_savestate_rng        ; Off
+    LDA #$0000 : STA !sram_loadstate_death      ; Off
+    LDA #$0000 : STA !sram_loadstate_freeze     ; Off
+    LDA #$0000 : STA !sram_loadstate_delay      ; 0 frames
+    LDA #$0001 : STA !sram_loadstate_redraw     ; Off
 
     ; Menu customization
-    LDA #$0001 : STA !sram_pal_profile
-    LDA #$0000 : STA !sram_menu_background
+    LDA #$0001 : STA !sram_pal_profile          ; Red
+    LDA #$0000 : STA !sram_menu_background      ; Off
     LDA #$001F : STA !sram_pal_header_outline
     LDA #$4B5F : STA !sram_pal_header_fill
     LDA #$365F : STA !sram_pal_text_outline
@@ -93,6 +98,7 @@ InitSRAM:
     LDA #$0000 : STA !sram_pal_background
 
     ; Clear crash handler SRAM
+    ; Not necessary, but makes debugging easier when reading manually
     LDA #$0000
     LDX !CRASHDUMP_SIZE
 -   STA !CRASHDUMP,X

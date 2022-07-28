@@ -130,6 +130,17 @@ NMITimeControl:
     JML $C09EBF ; skip NMI
 
   .unfreeze
+    %a8()
+    LDA !sram_loadstate_redraw : BNE .restoreIRQ
+    ; restore screen brightness
+    LDA !ram_loadstate_2100 : STA !LK_2100_Brightness
+    BRA .end
+
+  .restoreIRQ
+    LDA !ram_loadstate_4200 : STA !LK_4200_NMIEnable
+
+  .end
+    %a16()
     LDA #$0000 : STA !ram_TimeControl_mode
     STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
     JML $C09E1A ; return to NMI

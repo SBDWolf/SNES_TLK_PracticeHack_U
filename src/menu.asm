@@ -50,6 +50,7 @@ cm_start:
     PEA $0000 : PLB : PLB
 
     LDA !ram_TimeControl_mode : PHA
+    LDA !LK_FadeInOut_Flag : PHA
 
     JSR cm_init
 
@@ -58,6 +59,7 @@ cm_start:
 
     JSR cm_exit
 
+    PLA : STA !LK_FadeInOut_Flag
     PLA : STA !ram_TimeControl_mode
 
     PLY : PLX
@@ -88,6 +90,7 @@ cm_init:
 
     %a8()
     LDA #$0F : STA $0F2100 ; disable forced blanking
+    STA !LK_2100_Brightness : STZ !LK_FadeInOut_Flag
     %ai16()
 
     ; Setup menu state
@@ -154,7 +157,15 @@ cm_exit:
     LDA #$0000 : STA !ram_menu_active
     JSL UpdateHUD
 
-    LDA #$0000 : STA !ram_menu_active
+    ; check if menu shortcut contains Start
+    LDA !sram_ctrl_menu : AND !CTRL_START : BEQ +
+    ; check for newly activated pause
+    LDA !LK_Pause_Flag : BEQ +
+    LDA !LK_Silence_Countdown : BEQ +
+    ; clear pause flag before exiting
+    STZ !LK_Pause_Flag : STZ !LK_Silence_Countdown
+
++   LDA #$0000 : STA !ram_menu_active
     STA !LK_Controller_Filtered : STA !LK_Controller_Current : STA !LK_Controller_New
 
     RTS

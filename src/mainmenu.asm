@@ -669,7 +669,7 @@ SavestateSettingsMenu:
     dw #$0000
     %cm_header("SAVESTATE SETTINGS")
     %cm_footer("DELAY REQUIRES FREEZE ON")
-    
+
 savestate_rng:
     dw !ACTION_CHOICE
     dl #!sram_savestate_rng
@@ -687,7 +687,13 @@ loadstate_freeze:
     %cm_toggle("Freeze on Loadstate", !sram_loadstate_freeze, #$0001, #0)
 
 loadstate_delay:
-    %cm_numfield("Loadstate Freeze Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
+    %cm_numfield("Loadstate Freeze Delay", !sram_loadstate_delay, 0, 255, 15, 15, .routine)
+  .routine
+    BEQ .done
+    ; enable freeze if non-zero delay
+    LDA #$0001 : STA !sram_loadstate_freeze
+  .done
+    RTL
 
 loadstate_redraw:
     %cm_toggle_inverted("Black Screen on Freeze", !sram_loadstate_redraw, #$0001, #0)

@@ -48,10 +48,20 @@ endmacro
 
 macro cm_version_header(title, major, minor, build, rev_1, rev_2)
 if !VERSION_REV_1 ;              ^ = lowercase v
-    db !PALETTE_HEADER, "<title> ^<major>.<minor>.<build>.<rev_1><rev_2>", #$FF
+    db !PALETTE_HEADER, "<title> ^<major>.<minor>.<build>"
+if !DEV_BUILD
+    db #$FF
+else
+    db ".<rev_1><rev_2>", #$FF
+endif
 else
 if !VERSION_REV_2
-    db !PALETTE_HEADER, "<title> ^<major>.<minor>.<build>.<rev_2>", #$FF
+    db !PALETTE_HEADER, "<title> ^<major>.<minor>.<build>"
+if !DEV_BUILD
+    db #$FF
+else
+    db ".<rev_2>", #$FF
+endif
 else
     db !PALETTE_HEADER, "<title> ^<major>.<minor>.<build>", #$FF
 endif

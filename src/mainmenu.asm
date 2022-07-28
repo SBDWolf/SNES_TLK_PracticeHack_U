@@ -21,7 +21,7 @@ endif
     dw #$0000
     %cm_version_header("LION KING PRACTICE", !VERSION_MAJOR, !VERSION_MINOR, !VERSION_BUILD, !VERSION_REV_1, !VERSION_REV_2)
 if !DEV_BUILD
-    %cm_footer("DEVELOPMENT BUILD")
+    %cm_footer("DEVELOPMENT BUILD ^!VERSION_REV_1!VERSION_REV_2")
 else
     %cm_footer("LKPRACTICE.SPAZER.LINK")
 endif

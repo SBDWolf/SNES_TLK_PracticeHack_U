@@ -662,10 +662,13 @@ options_goto_savestate:
 SavestateSettingsMenu:
     dw #savestate_rng
     dw #loadstate_death
+    dw #$FFFF
     dw #loadstate_freeze
     dw #loadstate_delay
+    dw #loadstate_redraw
     dw #$0000
     %cm_header("SAVESTATE SETTINGS")
+    %cm_footer("DELAY REQUIRES FREEZE ON")
     
 savestate_rng:
     dw !ACTION_CHOICE
@@ -684,7 +687,10 @@ loadstate_freeze:
     %cm_toggle("Freeze on Loadstate", !sram_loadstate_freeze, #$0001, #0)
 
 loadstate_delay:
-    %cm_numfield("Loadstate Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
+    %cm_numfield("Loadstate Freeze Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
+
+loadstate_redraw:
+    %cm_toggle_inverted("Black Screen on Freeze", !sram_loadstate_redraw, #$0001, #0)
 
 
 ; ----------

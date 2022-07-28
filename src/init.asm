@@ -26,11 +26,21 @@ InitRAM:
     LDA #$2004 : STA !ram_mem_address
 
     ; Check if SRAM has been initialized
-    LDA !sram_initialized : CMP !SRAM_VERSION : BEQ +
-    JSR InitSRAM
+    LDA !sram_initialized : CMP !SRAM_VERSION : BEQ .game_options
+    ; Add new variables without wiping old data
+    CMP #$0000 : BEQ .sram_upgrade_from_00
+;    CMP #$0001 : BEQ .sram_upgrade_from_01
 
+    JSR InitSRAM
+    BRA .game_options
+
+  .sram_upgrade_from_00
+    LDA #$0001 : STA !sram_loadstate_redraw
+  .sram_upgrade_from_01
+
+  .game_options
     ; Load values from SRAM
-+   LDA !sram_options_difficulty : STA !LK_Options_Difficulty
+    LDA !sram_options_difficulty : STA !LK_Options_Difficulty
     LDA !sram_options_music : STA !LK_Options_Music
     LDA !sram_options_sfx : STA !LK_Options_SFX
     LDA !sram_options_control_type : STA !LK_Options_Controller
@@ -67,6 +77,7 @@ InitSRAM:
     LDA #$0000 : STA !sram_loadstate_death
     LDA #$0000 : STA !sram_loadstate_freeze
     LDA #$0000 : STA !sram_loadstate_delay
+    LDA #$0001 : STA !sram_loadstate_redraw
 
     ; Menu customization
     LDA #$0001 : STA !sram_pal_profile

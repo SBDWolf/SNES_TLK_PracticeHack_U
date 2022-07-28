@@ -90,22 +90,38 @@ post_load_state:
 
     ; optional freeze on load
     LDA !sram_loadstate_freeze : BEQ .setRNG
+
+    ; redrawing the screen is optional
+    LDA !sram_loadstate_redraw : BEQ .blanking
+
+    ; backup $4200 and disable IRQ if not blanking
+    LDA !LK_4200_NMIEnable : STA !ram_loadstate_4200
+    AND #$81 : STA !LK_4200_NMIEnable ; diable IRQ
+
     ; fake an NMI to update the screen
-    LDA #$80 : STA $802100 ; enable forced blanking
     PHK : PEA .NMIreturn : PHP ; push RTI-style return
     JML $009E08 ; NMI
   .NMIreturn
     LDA #$0F : STA $0F2100 ; disable forced blanking
-    %a16()
+    BRA .delay
 
-    LDA !sram_loadstate_delay : BEQ +
+  .blanking
+    ; keep the screen black until unfrozen
+    LDA #$80 : STA $802100 ; enable forced blanking
+    LDA !LK_2100_Brightness : STA !ram_loadstate_2100
+    STZ !LK_2100_Brightness
+
+  .delay
+    %a16()
+    LDA !sram_loadstate_delay : BEQ .delayZero
     ; unfreeze when delay timer expires
     STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
     LDA #$0002 : STA !ram_TimeControl_mode
     BRA .setRNG
 
+  .delayZero
     ; wait for new inputs if delay is zero
-+   LDA #$0010 : STA !ram_TimeControl_mode
+    LDA #$0010 : STA !ram_TimeControl_mode
     LDA #$0000
     STA !LK_Controller_Current : STA !LK_Controller_New : STA !LK_Controller_Filtered
 
@@ -371,19 +387,25 @@ save_write_table:
 
 load_state:
 {
-    LDA !SRAM_SAVED_STATE : CMP #$5AFE : BEQ +
-;    %sfxfail()
-    RTL
+    ; check if a save exists
+    LDA !SRAM_SAVED_STATE : CMP #$5AFE : BNE .fail
 
-+   JSR pre_load_state
+    ; disallow while frozen from previous load
++   LDA !ram_TimeControl_mode : CMP #$0010 : BEQ .fail
+
+    JSR pre_load_state
     PEA $8080 : PLB : PLB
     LDA $00 : STA !SRAM_SAVED_STACK
     LDA $02 : STA !SRAM_SAVED_STACK+2
 
     %a8()
-    LDA #$80 : STA $802100 ; force blanking
+;    LDA #$80 : STA $802100 ; force blanking
     LDX #load_write_table
     JMP run_vm
+
+  .fail
+;    %sfxfail()
+    RTL
 
 load_write_table:
     ; Disable HDMA

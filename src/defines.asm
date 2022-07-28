@@ -5,13 +5,13 @@ if !DEV_BUILD
 else
 !FEATURE_SAVESTATES ?= 0
 endif
-!SRAM_VERSION = #$0000 ; inc this to force initialization of new SRAM
+!SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
 
 !VERSION_MAJOR = 2
 !VERSION_MINOR = 0
 !VERSION_BUILD = 1
-!VERSION_REV_1 = 1
-!VERSION_REV_2 = 0
+!VERSION_REV_1 = 0
+!VERSION_REV_2 = 1
 
 !TILE_CLEAR = #$0140
 !TILE_BLANK = #$2540
@@ -138,6 +138,8 @@ endif
 !ram_play_music_track = !WRAM_START+$12
 !ram_play_sfx = !WRAM_START+$14
 !ram_loadstate_repeat = !WRAM_START+$16
+!ram_loadstate_2100 = !WRAM_START+$18 ; 0x1
+!ram_loadstate_4200 = !WRAM_START+$19 ; 0x1
 
 !ram_timer_frames = !WRAM_START+$20 ; 0x1
 !ram_timer_seconds = !WRAM_START+$21 ; 0x1
@@ -214,6 +216,7 @@ endif
 !sram_loadstate_death = !SRAM_START+$2E
 !sram_loadstate_freeze = !SRAM_START+$30
 !sram_loadstate_delay = !SRAM_START+$32
+!sram_loadstate_redraw = !SRAM_START+$34
 
 ; FREE SPACE ^
 

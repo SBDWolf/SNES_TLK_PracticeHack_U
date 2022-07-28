@@ -50,6 +50,7 @@ cm_start:
     PEA $0000 : PLB : PLB
 
     LDA !ram_TimeControl_mode : PHA
+    LDA !LK_FadeInOut_Flag : PHA
 
     JSR cm_init
 
@@ -58,6 +59,7 @@ cm_start:
 
     JSR cm_exit
 
+    PLA : STA !LK_FadeInOut_Flag
     PLA : STA !ram_TimeControl_mode
 
     PLY : PLX
@@ -88,6 +90,7 @@ cm_init:
 
     %a8()
     LDA #$0F : STA $0F2100 ; disable forced blanking
+    STA !LK_2100_Brightness : STZ !LK_FadeInOut_Flag
     %ai16()
 
     ; Setup menu state

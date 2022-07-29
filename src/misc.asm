@@ -67,6 +67,10 @@ org $C14891
 org $C08955
     JML BonusMinigameSkip
 
+; Hijack end of game loop to display remaining CPU time
+org $C0985F
+    JMP LagOMeter
+
 
 org $F50000
 print pc, " misc.asm start"
@@ -318,3 +322,27 @@ LevelTrackList:
 }
 
 print pc, " misc.asm end"
+
+
+org $C07FE0
+LagOMeter:
+; Runs at the end of the main game loop just before idling
+; Reduces screen brightness for the remainder of the frame
+; Darkened screen represents remaining idle time per frame
+{
+    LDA.w !ram_lag_display : BNE .enabled
+    ; return
+    LDX #$0080
+    JMP $9865
+
+  .enabled
+    ; use as brightness value
+    %a8()
+    STA $2100
+    %a16()
+    ; return
+    LDA #$0000
+    LDX #$0080
+    JMP $9865
+}
+warnpc $C08000

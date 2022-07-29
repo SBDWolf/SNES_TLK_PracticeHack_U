@@ -11,7 +11,7 @@ endif
 !VERSION_MINOR = 0
 !VERSION_BUILD = 1
 !VERSION_REV_1 = 0
-!VERSION_REV_2 = 3
+!VERSION_REV_2 = 4
 
 !TILE_CLEAR = #$0140
 !TILE_BLANK = #$2540
@@ -140,6 +140,9 @@ endif
 !ram_loadstate_repeat = !WRAM_START+$16
 !ram_loadstate_2100 = !WRAM_START+$18 ; 0x1
 !ram_loadstate_4200 = !WRAM_START+$19 ; 0x1
+!ram_lag_display = !WRAM_START+$1A
+
+; FREE SPACE ^
 
 !ram_timer_frames = !WRAM_START+$20 ; 0x1
 !ram_timer_seconds = !WRAM_START+$21 ; 0x1

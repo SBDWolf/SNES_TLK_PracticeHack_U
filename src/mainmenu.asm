@@ -590,6 +590,8 @@ SettingsMenu:
     dw #cutscenes_Exile
     dw #cutscenes_bonus
     dw #cutscenes_fastboot
+    dw #$FFFF
+    dw #lag_display
 if !FEATURE_SAVESTATES
     dw #$FFFF
     dw #options_goto_savestate
@@ -650,6 +652,9 @@ cutscenes_bonus:
 
 cutscenes_fastboot:
     %cm_toggle("Fast Boot/Reset", !sram_fast_boot, #$0001, #0)
+
+lag_display:
+    %cm_toggle("Show CPU Idle Time", !ram_lag_display, $0007, #$0000)
 
 options_goto_savestate:
     %cm_submenu("Savestate Settings", #SavestateSettingsMenu)

@@ -1,5 +1,6 @@
 
 ## Version 2.0.2
+- Added an option to show CPU usage during gameplay
 - Prevent accidental pausing when opening the menu
 - Fixed screen brightness getting stuck when saving/loading a state during fade in/out
 - Fixed flashing on menu redraw if opened during fade in/out

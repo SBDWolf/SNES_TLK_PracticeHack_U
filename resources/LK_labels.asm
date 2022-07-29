@@ -127,6 +127,9 @@ org !WRAM_START+$10 : ram_death_loops:
 org !WRAM_START+$12 : ram_play_music_track:
 org !WRAM_START+$14 : ram_play_sfx:
 org !WRAM_START+$16 : ram_loadstate_repeat:
+org !WRAM_START+$18 : ram_loadstate_2100:
+org !WRAM_START+$19 : ram_loadstate_4200:
+org !WRAM_START+$1A : ram_lag_display:
 
 
 

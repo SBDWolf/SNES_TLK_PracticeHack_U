@@ -189,6 +189,7 @@ org !SRAM_START+$2C : sram_savestate_rng:
 org !SRAM_START+$2E : sram_loadstate_death:
 org !SRAM_START+$30 : sram_loadstate_freeze:
 org !SRAM_START+$32 : sram_loadstate_delay:
+org !SRAM_START+$34 : sram_loadstate_redraw:
 
 org !SRAM_START+$E0 : sram_pal_profile:
 org !SRAM_START+$E2 : sram_cm_cgram:
@@ -231,6 +232,8 @@ org $7E0A40 : LK_Stampede_Progress:
 org $7E0A42 : LK_RNG_Related:
 
 org $7E0A4E : LK_Title_Screen:
+
+org $7E0A60 : LK_2107_BG1Tilemap:
 
 org $7E0A89 : LK_Pause_Flag:
 org $7E0A8B : LK_Disallow_Pause:

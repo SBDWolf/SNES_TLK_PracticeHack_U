@@ -34,6 +34,7 @@ ReadControllerInputs:
     ; determine new inputs (p2 high)
     EOR.w !LK_Controller_P2Current+1 : AND.w !LK_Controller_P2Filtered+1 : STA.w !LK_Controller_P2New+1
 
+    ; vanilla stuff
     %a16()
     LDA.w !LK_Controller_Filtered : AND #$000F : BEQ +
     STZ.w !LK_Controller_Filtered

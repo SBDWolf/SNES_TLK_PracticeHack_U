@@ -67,6 +67,10 @@ org $C14891
 org $C08955
     JML BonusMinigameSkip
 
+; Hijack end of game loop to display remaining CPU time
+org $C0985F
+    JMP LagOMeter
+
 
 org $F50000
 print pc, " misc.asm start"
@@ -209,12 +213,16 @@ DeathLoopProtection:
     ; count death loops up to 4
     LDA !ram_death_loops : INC : STA !ram_death_loops
     CMP #$0004 : BMI .return
+
     ; reset checkpoint to default
     PHX : PHY
     LDA #$0000 : STA !ram_death_loops
+    ; current level * 3 = index
     LDA !LK_Current_Level : ASL : ADC !LK_Current_Level : TAX
+    ; load level info pointer
     LDA $C00357,X : STA $38
     LDA $C00359,X : STA $3A
+    ; get checkpoint coordinates
     LDY #$16
     LDA [$38],Y : STA !LK_Checkpoint_X
     LDY #$18
@@ -228,29 +236,36 @@ DeathLoopProtection:
 
 Reset_PPU_Registers:
 ; called by save/load routines
+; mostly copying $C098F1
 {
     PHP : %ai16()
+    ; current level * 3 = index
     LDA !LK_Current_Level : ASL : ADC !LK_Current_Level : TAX
+    ; load level info pointer
     LDA $C00357,X : STA $DF
     %a8()
     LDA $C00359,X : STA $E1
-    LDA #$80 : STA $802100
-    STZ $2106 : STZ $4200
-    STZ $210B : STZ $210C
-    LDA #$03 : STA $2101
-    LDA #$09 : STA $2105
 
-    LDX $DF : CPX #$041D : BNE .not_041D
-    LDA #$40 : STA $0A60 : STA $2107
-    LDA #$4C : STA $2108
+    ; common register settings
+    LDA #$80 : STA $802100 ; enable forced blanking
+    STZ $2106 : STZ $4200 ; clear mosaic, disable all interrupts
+    STZ $210B : STZ $210C ; clear BG1-4 tileset addr
+    LDA #$03 : STA $2101 ; OAM address
+    LDA #$09 : STA $2105 ; Mode 1, BG3 priority on
+
+    LDX $DF : CPX #$041D : BNE .notStampede
+    ; Stampede updates BG1 tilemap addr rapidly
+    LDA #$40 : STA $0A60 : STA $2107 ; BG1 tilemap addr
+    LDA #$4C : STA $2108 ; BG2 tilemap addr
     PLP
     RTL
 
-  .not_041D ; probably Stampede
-    LDA #$41 : STA $2107
-    LDA #$49 : STA $2108
-    LDA #$48 : STA $2109
-    LDA #$00 : STA $210A
+  .notStampede
+    ; tilemap addresses and sizes
+    LDA #$41 : STA $2107 ; BG1 tilemap addr/size
+    LDA #$49 : STA $2108 ; BG2 tilemap addr/size
+    LDA #$48 : STA $2109 ; BG3 tilemap addr/size
+    LDA #$00 : STA $210A ; BG4 tilemap addr/size
     PLP
     RTL
 }
@@ -307,3 +322,27 @@ LevelTrackList:
 }
 
 print pc, " misc.asm end"
+
+
+org $C07FE0
+LagOMeter:
+; Runs at the end of the main game loop just before idling
+; Reduces screen brightness for the remainder of the frame
+; Darkened screen represents remaining idle time per frame
+{
+    LDA.w !ram_lag_display : BNE .enabled
+    ; return
+    LDX #$0080
+    JMP $9865
+
+  .enabled
+    ; use as brightness value
+    %a8()
+    STA $2100
+    %a16()
+    ; return
+    LDA #$0000
+    LDX #$0080
+    JMP $9865
+}
+warnpc $C08000

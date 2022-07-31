@@ -21,7 +21,7 @@ endif
     dw #$0000
     %cm_version_header("LION KING PRACTICE", !VERSION_MAJOR, !VERSION_MINOR, !VERSION_BUILD, !VERSION_REV_1, !VERSION_REV_2)
 if !DEV_BUILD
-    %cm_footer("DEVELOPMENT BUILD")
+    %cm_footer("DEVELOPMENT BUILD ^!VERSION_REV_1!VERSION_REV_2")
 else
     %cm_footer("LKPRACTICE.SPAZER.LINK")
 endif
@@ -590,6 +590,8 @@ SettingsMenu:
     dw #cutscenes_Exile
     dw #cutscenes_bonus
     dw #cutscenes_fastboot
+    dw #$FFFF
+    dw #lag_display
 if !FEATURE_SAVESTATES
     dw #$FFFF
     dw #options_goto_savestate
@@ -651,6 +653,9 @@ cutscenes_bonus:
 cutscenes_fastboot:
     %cm_toggle("Fast Boot/Reset", !sram_fast_boot, #$0001, #0)
 
+lag_display:
+    %cm_toggle("Show CPU Idle Time", !ram_lag_display, $0007, #$0000)
+
 options_goto_savestate:
     %cm_submenu("Savestate Settings", #SavestateSettingsMenu)
 
@@ -669,7 +674,7 @@ SavestateSettingsMenu:
     dw #$0000
     %cm_header("SAVESTATE SETTINGS")
     %cm_footer("DELAY REQUIRES FREEZE ON")
-    
+
 savestate_rng:
     dw !ACTION_CHOICE
     dl #!sram_savestate_rng
@@ -687,7 +692,13 @@ loadstate_freeze:
     %cm_toggle("Freeze on Loadstate", !sram_loadstate_freeze, #$0001, #0)
 
 loadstate_delay:
-    %cm_numfield("Loadstate Freeze Delay", !sram_loadstate_delay, 0, 90, 15, 15, #0)
+    %cm_numfield("Loadstate Freeze Delay", !sram_loadstate_delay, 0, 255, 15, 15, .routine)
+  .routine
+    BEQ .done
+    ; enable freeze if non-zero delay
+    LDA #$0001 : STA !sram_loadstate_freeze
+  .done
+    RTL
 
 loadstate_redraw:
     %cm_toggle_inverted("Black Screen on Freeze", !sram_loadstate_redraw, #$0001, #0)

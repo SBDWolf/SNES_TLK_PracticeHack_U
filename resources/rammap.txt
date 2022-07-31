@@ -1,9 +1,14 @@
 
+; ----------------
+; TLK SNES RAM MAP
+; ----------------
+; This information applies to the vanilla game
+; See ../src/defines.asm for practice hack memory usage
 
 ; indirect addressing: 14, 1F, 68, 93, DC, DF, EF, F2
 
 $7E0056  $0001  Fade in/out flag, set negative to fade out, positive (non-zero) to fade in
-$7E0057  $0001  Brightness, 0=black, $0F=full
+$7E0057  $0001  Register mirror for $2100. Brightness, 0=black, $0F=full, $8x = forced blanking
 
 $7E005A  $0002  Filtered controller inputs
 $7E005C  $0002  Current controller inputs
@@ -11,6 +16,10 @@ $7E005C  $0002  Current controller inputs
 $7E0062  $0002  Current inputs after rebinding
 
 $7E00FA  $0002  Exile cutscene check ???
+
+$7E0100  $0100  UNUSED
+
+$7E0200  $0100  Stack allocation
 
 $7E0A00  $0002  IRQ jump pointer (bank $C0/00)
 $7E0A02  $0001  Index into IRQ position tables
@@ -24,6 +33,8 @@ $7E0A42  $0003  Related to RNG, STA $0A42 : STZ $0A43 (a16) ???
 
 $7E0A4E  $0002  Title screen check ???
 
+$7E0A60  $0002  Register mirror for $2107, BG1 tilemap address, used on Stampede level
+
 $7E0A89  $0002  Pause flag, 0=unpaused 1=paused
 $7E0A8B  $0002  Pause allowed flag, 0=disabled
 
@@ -34,6 +45,8 @@ $7E1E03  $0002  Flags related to inputs, #$8000=Demo ???
 
 $7E1E0F  $0002  Backup of controller option during demo playback
 $7E1E11  $0002  Backup of difficulty option during demo playback
+
+$7E1E20  $00E0  UNUSED
 
 $7E2000  $0002  Simba age, $0000=cub $00FF=adult
 $7E2002  $0002  Simba roar
@@ -73,6 +86,8 @@ $7EC0C1  $0002  Bug Hunt I timer
 $7ECB41  $0002  Bug Hunt II timer
 
 $7EF93A  $0002  ??? $7FFF9E +1 during level loading
+
+$7EF9C0  $0640  UNUSED
 
 $7F8000  $0800  BG3 tilemap during options menu
 

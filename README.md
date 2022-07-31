@@ -28,9 +28,11 @@
 - Level timer displayed on the HUD at level completion, when Select is pressed, or when the final attack on Scar is executed
 - Tracking for fastest level completion times across each difficulty
 - Customizable controller shortcuts
+- Shortcuts to pause time, frame advance, and/or play in slow motion
 - Simba menu to set values such as health, roar, invulnerability, and more
 - Level select menu lets you load any level and edit checkpoint positions freely
 - Memory editor tools
+- Option to show CPU usage by darkening the screen during idle time
 - Option to skip directly to the title screen on boot/reset
 - Options to skip death and story cutscenes
 - Option to automatically load a savestate upon death

@@ -55,11 +55,14 @@ memory_edit_lo:
 memory_edit_write:
     %cm_jsl("Write to Address", .routine, #0)
   .routine
+    ; setup indirect addressing
     %a8()
     LDA !ram_mem_address_lo : STA $40
     LDA !ram_mem_address_hi : STA $41
     LDA !ram_mem_address_bank : STA $42
+
     LDA !ram_mem_memory_size : BNE .eight_bit
+    ; 16-bit write
     LDA !ram_mem_editor_hi : XBA : LDA !ram_mem_editor_lo
     %a16()
     STA [$40]
@@ -129,28 +132,31 @@ cm_memory_editor:
 
   .labels
     ; bunch of $ symbols
-    LDA #$295F : STA !ram_tilemap_buffer+$172 ; $Bank
-    LDA #$295F : STA !ram_tilemap_buffer+$1B2 ; $High
-    LDA #$295F : STA !ram_tilemap_buffer+$1F2 ; $Low
-    LDA #$295F : STA !ram_tilemap_buffer+$2F2 ; $High
-    LDA #$295F : STA !ram_tilemap_buffer+$332 ; $Low
-    LDA #$295F : STA !ram_tilemap_buffer+$428 ; $Value
-    LDA #$295F : STA !ram_tilemap_buffer+$44C ; $Address
+    LDA #$295F
+    STA !ram_tilemap_buffer+$172 ; $Bank
+    STA !ram_tilemap_buffer+$1B2 ; $High
+    STA !ram_tilemap_buffer+$1F2 ; $Low
+    STA !ram_tilemap_buffer+$2F2 ; $High
+    STA !ram_tilemap_buffer+$332 ; $Low
+    STA !ram_tilemap_buffer+$428 ; $Value
+    STA !ram_tilemap_buffer+$44C ; $Address
 
     ; labeling for newbies
-    LDA #$2D77 : STA !ram_tilemap_buffer+$40E ; B
-    LDA #$2D77 : STA !ram_tilemap_buffer+$410 ; B
-    LDA #$2D47 : STA !ram_tilemap_buffer+$412 ; H
+    LDA #$2D77
+    STA !ram_tilemap_buffer+$40E ; B
+    STA !ram_tilemap_buffer+$410 ; B
     LDA #$2D48 : STA !ram_tilemap_buffer+$414 ; I
     LDA #$2D7D : STA !ram_tilemap_buffer+$416 ; L
     LDA #$2D4E : STA !ram_tilemap_buffer+$418 ; O
+    LDA #$2D47 : STA !ram_tilemap_buffer+$412 ; H
 
     ; HEX and DEC labels
-    LDA #$2D47 : STA !ram_tilemap_buffer+$420 ; H
-    LDA #$2D44 : STA !ram_tilemap_buffer+$422 ; E
+    STA !ram_tilemap_buffer+$420 ; H
+    LDA #$2D44
+    STA !ram_tilemap_buffer+$422 ; E
+    STA !ram_tilemap_buffer+$462 ; E
     LDA #$2D7E : STA !ram_tilemap_buffer+$424 ; X
     LDA #$2D43 : STA !ram_tilemap_buffer+$460 ; D
-    LDA #$2D44 : STA !ram_tilemap_buffer+$462 ; E
     LDA #$2D42 : STA !ram_tilemap_buffer+$464 ; C
 
     ; setup to draw $10 bytes of nearby RAM
@@ -166,12 +172,14 @@ cm_memory_editor:
     INC $40
 
     ; inc tilemap position
-    INX #6 : LDA !ram_mem_line_position : INC
+    INX #6
+    LDA !ram_mem_line_position : INC
     STA !ram_mem_line_position : AND #$08 : BEQ +
 
     ; start a new line
     LDA #$00 : STA !ram_mem_line_position
     %a16()
+    ; skip a row and wrap to the beginning
     TXA : CLC : ADC #$0050 : TAX
     CPX #$05BA : BPL .doneLowerHalf
     %a8()

@@ -135,15 +135,13 @@ cm_exit:
 
     ; restore registers
     %a8()
-    LDA !LK_Current_Level : CMP #$0E : BNE .titleScreen
+    LDA !LK_Current_Level : CMP #$0E : BEQ .titleScreen
     LDA #$13 : STA $212C ; enable OBJ/BG1/BG2
     LDA #$01 : STA $2105 ; disable BG3 priority, Mode 1
     LDA !LK_2100_Brightness : STA $2100 ; disable forced blanking
     BRA .redrawHUD
 
   .titleScreen
-    LDA #$13 : STA $212C ; enable OBJ/BG1/BG2
-    LDA #$01 : STA $2105 ; disable BG3 priority, Mode 1
     LDX #$07 : STX $212C ; Enable BG1/BG2/BG3
     LDX #$09 : STX $2105 ; BG3 priority, Mode 1
     LDX #$7C : STX $2109 ; BG3 tilemap addr to $7C00 ($F800 in VRAM)
@@ -260,7 +258,7 @@ cm_backup_cgram:
     LDX #$80 : STX $2100 ; enable forced blanking
     LDX #$00 : STX $2121 ; CGRAM address
     LDA #$3B80 : STA $4300 ; B->A, source = $213B (CGRAM read)
-    LDA #!ram_cm_cgram_backup : STA $4302 ; destination addr
+    LDA.w #!ram_cm_cgram_backup : STA $4302 ; destination addr
     LDX.b #!ram_cm_cgram_backup>>16 : STX $4304 ; destination bank
     LDA #$0020 : STA $4305 ; size
     LDX #$01 : STX $420B ; transfer on channel 0
@@ -275,7 +273,7 @@ cm_transfer_menu_cgram:
     LDX #$80 : STX $2100 ; enable forced blanking
     LDX #$00 : STX $2121 ; CGRAM address
     LDA #$2200 : STA $4300 ; B->A, source = $213B (CGRAM read)
-    LDA #!ram_cm_cgram : STA $4302 ; destination addr
+    LDA.w #!ram_cm_cgram : STA $4302 ; destination addr
     LDX.b #!ram_cm_cgram>>16 : STX $4304 ; destination bank
     LDA #$0020 : STA $4305 ; size
     LDX #$01 : STX $420B ; transfer on channel 0
@@ -290,7 +288,7 @@ cm_transfer_original_cgram:
     LDX #$80 : STX $2100 ; enable forced blanking
     LDX #$00 : STX $2121 ; CGRAM address
     LDA #$2200 : STA $4300 ; B->A, source = $213B (CGRAM read)
-    LDA #!ram_cm_cgram_backup : STA $4302 ; destination addr
+    LDA.w #!ram_cm_cgram_backup : STA $4302 ; destination addr
     LDX.b #!ram_cm_cgram_backup>>16 : STX $4304 ; destination bank
     LDA #$0020 : STA $4305 ; size
     LDX #$01 : STX $420B ; transfer on channel 0
@@ -491,8 +489,7 @@ draw_toggle:
     ; Off
     %a16()
     LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X
-    LDA #$2945 : STA !ram_tilemap_buffer+4,X
+    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
@@ -534,8 +531,7 @@ draw_toggle_inverted:
     ; Off
     %a16()
     LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X
-    LDA #$2945 : STA !ram_tilemap_buffer+4,X
+    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
@@ -575,8 +571,7 @@ draw_toggle_bit:
     ; Off
     %a16()
     LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X
-    LDA #$2945 : STA !ram_tilemap_buffer+4,X
+    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
@@ -616,8 +611,7 @@ draw_toggle_bit_inverted:
     ; Off
     %a16()
     LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X
-    LDA #$2945 : STA !ram_tilemap_buffer+4,X
+    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked

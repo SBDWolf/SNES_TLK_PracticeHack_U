@@ -1,17 +1,18 @@
 
+; -------
+; Symbols
+; -------
+
+; default settings for assembler (change in build script)
 !DEV_BUILD ?= 0 ; outputs debugging symbols, unhides unfinished menus
-if !DEV_BUILD
-!FEATURE_SAVESTATES ?= 1
-else
-!FEATURE_SAVESTATES ?= 0
-endif
-!SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
+!FEATURE_SAVESTATES ?= 0 ; savestates are not compatible with all platforms
 
 !VERSION_MAJOR = 2
 !VERSION_MINOR = 0
 !VERSION_BUILD = 2
 !VERSION_REV_1 = 0
 !VERSION_REV_2 = 1
+!SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
 
 !TILE_CLEAR = #$0140
 !TILE_BLANK = #$2540

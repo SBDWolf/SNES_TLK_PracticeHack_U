@@ -254,15 +254,14 @@ if !FEATURE_SAVESTATES
     ; check for load state shortcut
 +   LDA !sram_crash_input : CMP !sram_ctrl_load_state : BNE +
     AND !sram_crash_input_new : BEQ +
+    ; check if savestate exists
+    LDA !SRAM_SAVED_STATE : CMP #$5AFE : BNE +
     ; prepare to jump to load_state
-    BRA +
-    ; adjust this for LK before uncommenting and removing above BRA
-
-;    %a8()
-;    LDA #gamemode_start>>16 : PHA : PLB
-;    %a16()
-;    PEA.w gamemode_start_return-1
-;    JML gamemode_shortcuts_load_state
+    %a8()
+    LDA.b #ReadControllerInputs>>16 : PHA : PLB
+    %a16()
+    PEA.w ReadControllerInputs_crash_loadstate_return-1
+    JML ControllerShortcuts_loadstate
 endif
 
 +   TXA : AND #$0010 : BNE .incPalette ; R

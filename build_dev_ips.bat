@@ -8,16 +8,16 @@ python create_dummies.py 00.sfc ff.sfc
 
 echo Patching dummies
 copy *.sfc ..\build
-..\tools\asar\asar.exe --no-title-check ..\src\main.asm ..\build\00.sfc
-..\tools\asar\asar.exe --no-title-check ..\src\main.asm ..\build\ff.sfc
+..\tools\asar\asar.exe --no-title-check -DDEV_BUILD=1 ..\src\main.asm ..\build\00.sfc
+..\tools\asar\asar.exe --no-title-check -DDEV_BUILD=1 ..\src\main.asm ..\build\ff.sfc
 
 echo Creating IPS patch from dummies
 python create_ips.py ..\build\00.sfc ..\build\ff.sfc ..\build\LionKing_Practice_2.0.X.ips
 
 echo Patching dummies (savestates enabled)
 copy *.sfc ..\build
-..\tools\asar\asar.exe --no-title-check -DFEATURE_SAVESTATES=1 ..\src\main.asm ..\build\00.sfc
-..\tools\asar\asar.exe --no-title-check -DFEATURE_SAVESTATES=1 ..\src\main.asm ..\build\ff.sfc
+..\tools\asar\asar.exe --no-title-check -DDEV_BUILD=1 -DFEATURE_SAVESTATES=1 ..\src\main.asm ..\build\00.sfc
+..\tools\asar\asar.exe --no-title-check -DDEV_BUILD=1 -DFEATURE_SAVESTATES=1 ..\src\main.asm ..\build\ff.sfc
 
 echo Creating IPS patch from dummies
 python create_ips.py ..\build\00.sfc ..\build\ff.sfc ..\build\LionKing_Practice_Savestates_2.0.X.ips

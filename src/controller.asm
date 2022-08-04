@@ -57,6 +57,7 @@ ReadControllerInputs:
     LDA.w !LK_Controller_P2Filtered : STA.w !LK_Controller_P2Current
 
     JSL ControllerShortcuts
+  .crash_loadstate_return
 
     PLP
     RTS

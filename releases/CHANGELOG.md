@@ -1,4 +1,7 @@
 
+## Version 2.0.3
+- Fixed SRAM initialization on RetroArch and SNES Classic
+
 ## Version 2.0.2
 - Added an option to show CPU usage during gameplay
 - Prevent accidental pausing when opening the menu

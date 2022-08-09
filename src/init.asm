@@ -26,11 +26,20 @@ InitRAM:
     LDA #$2004 : STA !ram_mem_address
 
     ; Check if SRAM has been initialized
-    LDA !sram_initialized : CMP !SRAM_VERSION : BEQ .game_options
+    LDA !sram_initialized : BNE .version
+    ; The initial v2 release mistakenly used #$0000 as the SRAM_VERSION
+    ; We can use the last two bytes of TIMEATTACK for #$1010 to
+    ; determine if SRAM was actually initiallized -InsaneFirebat
+    LDA !TIMEATTACK+$5E : CMP #$1010 : BNE .init
+    BRA .sram_upgrade_from_00
+
+  .version
+    CMP !SRAM_VERSION : BEQ .game_options
+
     ; Add new variables without wiping old data
-    CMP #$0000 : BEQ .sram_upgrade_from_00
 ;    CMP #$0001 : BEQ .sram_upgrade_from_01
 
+  .init
     JSR InitSRAM
     BRA .game_options
 
@@ -109,6 +118,7 @@ endif
 -   STA !TIMEATTACK,X
     DEX #2 : BPL -
 
+  .version
     ; Store SRAM initialized flag
     LDA !SRAM_VERSION : STA !sram_initialized
 

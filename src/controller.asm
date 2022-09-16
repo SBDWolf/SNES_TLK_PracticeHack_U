@@ -151,6 +151,7 @@ endif
     CMP #$000E : BMI .fail
   .safe
     LDA #$0001 : STA !LK_Loading_Trigger
+    STA !ram_TimeAttack_DoNotRecord
     RTL
   .fail
 ;    %sfxfail()

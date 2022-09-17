@@ -267,6 +267,7 @@ levelselect_next_level:
 
   .safe
     TYA : STA !LK_Loading_Trigger
+    STA !ram_TimeAttack_DoNotRecord
     STA !ram_cm_leave
     RTL
 

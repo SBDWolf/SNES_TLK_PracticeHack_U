@@ -1,4 +1,7 @@
 
+## Version 2.0.4
+- Fixed best level times being overwritten when loading next level
+
 ## Version 2.0.3
 - Fixed SRAM initialization on RetroArch and SNES Classic
 

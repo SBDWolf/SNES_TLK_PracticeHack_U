@@ -203,7 +203,7 @@ CrashViewer:
     LDA #$09 : STA $2105  ; BG3 priority on, BG Mode 1
     LDA #$77 : STA $210C  ; BG3 tileset address to $7000 ($F000 in VRAM)
     LDA #$7C : STA $2109  ; BG3 tilemap address, 32x32 size
-    LDA #$04 : STA $212C  ; Enable BG3 on main screen
+    LDA #$17 : STA $212C  ; Enable BG3 on main screen
 ;    LDA #$04 : STA $212D  ; Enable BG3 on subscreen
 ;    LDA #$02 : STA $2130  ; Add subscreen to color math
 ;    LDA #$33 : STA $2131  ; Enable color math on backgrounds and OAM

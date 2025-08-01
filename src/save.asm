@@ -26,8 +26,7 @@
 ; A68C and surrounding?
 ; 
 
-org $F30000
-print pc, " save.asm start"
+%startfree(F3)
 ; These can be modified to do game-specific things before and after saving and loading
 ; Both A and X/Y are 16-bit here
 
@@ -696,5 +695,4 @@ run_vm:
   .vm_done
     JMP ($0002,X)
 }
-
-print pc, " save.asm end"
+%endfree(F3)

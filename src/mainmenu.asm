@@ -1,6 +1,5 @@
 
-org $F08000
-print pc, " mainmenu.asm start"
+%startfree(F0)
 
 ; MainMenu must live in the same bank as the core menu code
 ; From here, submenus can branch off into any bank
@@ -775,7 +774,7 @@ ctrl_reset_defaults:
 ;    %sfxquake()
     RTL
 
-print pc, " mainmenu end"
+%endfree(F0)
 
 
 incsrc customizemenu.asm

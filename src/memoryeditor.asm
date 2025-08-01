@@ -3,7 +3,6 @@
 ; Memory Editor
 ; -------------
 
-print pc, " memory editor start"
 MemoryEditorMenu:
     dw #memory_addr_bank
     dw #memory_addr_hi
@@ -229,5 +228,3 @@ cm_memory_editor:
   .doneUpperHalf
     RTL
 }
-
-print pc, " memory editor end"

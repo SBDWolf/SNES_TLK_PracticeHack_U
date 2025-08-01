@@ -34,8 +34,7 @@ JML_COPHandler:
     JML COPHandler
 
 
-org $F40000
-print pc, " crash handler bankF4 start"
+%startfree(F4)
 
 ; This routine (or a bridge to it) must live in bank $00
 CrashHandler:
@@ -1102,4 +1101,4 @@ CrashHexGFXTable:
 CrashGFXTileset:
 incbin ../resources/CrashGFX.bin
 
-print pc, " crash handler bankF4 end"
+%endfree(F4)

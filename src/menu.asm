@@ -37,8 +37,7 @@
 ; $4A = RAM bank, maximum value
 ; $4B = RAM bank, maximum value
 
-org $F00000
-print pc, " menu start"
+%startfree(F0)
 
 cm_start:
 {
@@ -2458,5 +2457,4 @@ ControllerGFXTable:
 ;       A       B       X       Y       R
     dw #$297F, #$2977, #$297E, #$2976, #$297C
 
-print pc, " menu end"
-warnpc $F08000 ; mainmenu.asm
+%endfree(F0)

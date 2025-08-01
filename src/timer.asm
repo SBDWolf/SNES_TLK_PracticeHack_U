@@ -68,8 +68,7 @@ org $C38994
 IgnoreMinorTransition_return:
 
 
-org $F10000
-print pc, " timer.asm start"
+%startfree(F1)
 
 NMITimeControl:
 ; The idle routine refuses to return until its flag has been flipped in NMI
@@ -479,5 +478,4 @@ IgnoreMinorTransition:
     LDA #$FF : STA !ram_timer_ignore
     JML IgnoreMinorTransition_return
 }
-
-print pc, " timer.asm end"
+%endfree(F1)

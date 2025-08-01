@@ -26,18 +26,19 @@ else
     db $05 ; 64kb max for Virtual Console support, banks $30-33, $6000-7FFF
 endif
 
-
-incsrc init.asm ; $FF0000
-incsrc timer.asm ; $F10000
-incsrc controller.asm ; $F20000
-incsrc save.asm ; $F30000
-incsrc menu.asm ; $F00000
-incsrc mainmenu.asm ; $F08000
-incsrc misc.asm ; $F50000
+incsrc freespace.asm
+incsrc init.asm ; Bank $FF
+incsrc timer.asm ; Bank $F1
+incsrc controller.asm ; Bank $F2
+incsrc save.asm ; Bank $F3
+incsrc menu.asm ; Bank $F0
+incsrc mainmenu.asm ; Bank $F0
+incsrc misc.asm ; Bank $F5
 
 ;if !DEV_BUILD
 ; restrict to dev builds when stable?
-incsrc crash.asm ; $F40000
+incsrc crash.asm ; Bank $F4
 ;endif
 
+%printfreespace()
 print "~ asar task completed."

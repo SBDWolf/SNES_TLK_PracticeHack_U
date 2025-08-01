@@ -10,7 +10,7 @@
 !VERSION_MAJOR = 2
 !VERSION_MINOR = 0
 !VERSION_BUILD = 4
-!VERSION_REV_1 = 0
+!VERSION_REV_1 = 1
 !VERSION_REV_2 = 0
 !SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
 
@@ -97,6 +97,21 @@
 !ram_menu_active = !MENU_RAM_START+$36
 
 ; $38..4B reserved for menu DP usage
+!DP_JSLTarget = $0000 ; 4
+!DP_Temp = $38 ; 4
+!DP_Frames = $38
+!DP_Minimum = $38
+!DP_Maximum = $3A
+!DP_Value = $3A
+!DP_Seconds = $3A
+!DP_Minutes = $3C
+!DP_Toggle = $3C
+!DP_Increment = $3C
+!DP_Palette = $3E
+!DP_MenuIndices = $40
+!DP_MenuBank = $42
+!DP_CurrentMenu = $44 ; 4
+!DP_Address = $48 ; 4
 
 !ram_cm_music_test = !MENU_RAM_START+$50
 !ram_cm_sfx_test = !MENU_RAM_START+$52

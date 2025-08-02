@@ -12,31 +12,6 @@
 ; Add this offset to any DP (one byte) address
 ; Using 16 or 24 bit addressing escapes this offset
 
-; $0000 = "Indirect JSL" address
-; $0001 = "Indirect JSL" address
-; $0002 = "Indirect JSL" bank
-; $0003 = "Indirect JSL" bank
-; $38 = various temp usage
-; $39 = various temp usage
-; $3A = various temp usage
-; $3B = various temp usage
-; $3C = toggle value, increment
-; $3D = toggle value, increment
-; $3E = Palette byte for text
-; $3F = Palette byte for text
-; $40 = menu indices, !ram_cm_menu_stack,X
-; $41 = menu indices, !ram_cm_menu_stack,X
-; $42 = menu bank
-; $43 = menu bank
-; $44 = menu item address
-; $45 = menu item address
-; $46 = menu item bank
-; $47 = menu item bank
-; $48 = RAM address, minimum value
-; $49 = RAM address, minimum value
-; $4A = RAM bank, maximum value
-; $4B = RAM bank, maximum value
-
 %startfree(F0)
 
 cm_start:

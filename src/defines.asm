@@ -10,8 +10,8 @@
 !VERSION_MAJOR = 2
 !VERSION_MINOR = 0
 !VERSION_BUILD = 4
-!VERSION_REV_1 = 1
-!VERSION_REV_2 = 0
+!VERSION_REV_1 = 0
+!VERSION_REV_2 = 1
 !SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
 
 !TILE_CLEAR = #$0140

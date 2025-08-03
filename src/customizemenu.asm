@@ -3,7 +3,6 @@
 ; Customize Practice Menu
 ; -----------------------
 
-print pc, " customize menu start"
 CustomizeMenu:
     dw #custom_menubackground
     dw #$FFFF
@@ -403,5 +402,3 @@ ColorMenuTable_selected_fill:
 
 ColorMenuTable_background:
     %setupRGB(!sram_pal_background)
-
-print pc, " customize menu end"

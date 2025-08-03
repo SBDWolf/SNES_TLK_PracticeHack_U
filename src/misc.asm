@@ -72,8 +72,7 @@ org $C0985F
     JMP LagOMeter
 
 
-org $F50000
-print pc, " misc.asm start"
+%startfree(F5)
 
 SkipBootScreens:
 {
@@ -321,10 +320,10 @@ LevelTrackList:
     dw #$FFFF ; Exile cutscene track unknown
 }
 
-print pc, " misc.asm end"
+%endfree(F5)
 
 
-org $C07FE0
+%startfree(C0)
 LagOMeter:
 ; Runs at the end of the main game loop just before idling
 ; Reduces screen brightness for the remainder of the frame
@@ -345,4 +344,4 @@ LagOMeter:
     LDX #$0080
     JMP $9865
 }
-warnpc $C08000
+%endfree(C0)

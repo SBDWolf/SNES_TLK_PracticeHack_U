@@ -3,8 +3,7 @@
 org $C0A07C
     JMP ReadControllerInputs
 
-org $C0FF00
-print pc, " ReadControllerInputs start"
+%startfree(C0)
 ReadControllerInputs_long:
 {
     JSR ReadControllerInputs_PHP
@@ -62,12 +61,10 @@ ReadControllerInputs:
     PLP
     RTS
 }
-print pc, " ReadControllerInputs end"
-warnpc $C0FFB0 ; game header
+%endfree(C0)
 
 
-org $F20000
-print pc, " ControllerShortcuts start"
+%startfree(F2)
 ControllerShortcuts:
 {
     ; no shortcuts allowed in menu
@@ -189,4 +186,4 @@ endif
     LDA !ram_TimeControl_frames : INC : STA !ram_TimeControl_frames : STA !ram_TimeControl_timer
     RTL
 }
-print pc, " ControllerShortcuts end"
+%endfree(F2)

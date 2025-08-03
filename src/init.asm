@@ -4,7 +4,7 @@ org $008003
     JML InitRAM
 
 
-org $FF0000
+%startfree(FF)
 InitRAM:
 {
     %ai16()
@@ -124,3 +124,4 @@ endif
 
     RTS
 }
+%endfree(FF)

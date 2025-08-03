@@ -12,33 +12,7 @@
 ; Add this offset to any DP (one byte) address
 ; Using 16 or 24 bit addressing escapes this offset
 
-; $0000 = "Indirect JSL" address
-; $0001 = "Indirect JSL" address
-; $0002 = "Indirect JSL" bank
-; $0003 = "Indirect JSL" bank
-; $38 = various temp usage
-; $39 = various temp usage
-; $3A = various temp usage
-; $3B = various temp usage
-; $3C = toggle value, increment
-; $3D = toggle value, increment
-; $3E = Palette byte for text
-; $3F = Palette byte for text
-; $40 = menu indices, !ram_cm_menu_stack,X
-; $41 = menu indices, !ram_cm_menu_stack,X
-; $42 = menu bank
-; $43 = menu bank
-; $44 = menu item address
-; $45 = menu item address
-; $46 = menu item bank
-; $47 = menu item bank
-; $48 = RAM address, minimum value
-; $49 = RAM address, minimum value
-; $4A = RAM bank, maximum value
-; $4B = RAM bank, maximum value
-
-org $F00000
-print pc, " menu start"
+%startfree(F0)
 
 cm_start:
 {
@@ -172,7 +146,7 @@ cm_exit:
 cm_BG3_setup:
 {
 ; Setup screen for drawing text on BG3
-    ; Write $640 bytes of zeroes to !ram_tilemap_buffer
+    ; Write $540 bytes of zeroes to !ram_tilemap_buffer
     LDA #$0000 : LDX #$053E
 -   STA !ram_tilemap_buffer,X
     DEX #2 : BPL -
@@ -226,18 +200,18 @@ cm_HUD_refresh:
 {
 ; use indirect addressing to loop through object RAM in search of the two HUD bars
 ; exit if both have been found, or if we've searched long enough (they don't always exist)
-    LDA #$0010 : STA $38 ; max object slots to check, there are over 83 counting Simba's
-    LDA #$B217 : STA $3A ; first object addr pointer
-    LDA #$7E7E : STA $3C ; object RAM bank
-    LDA #$0002 : STA $3E ; HUD elements left to find
+    LDA #$0010 : STA !DP_Maximum ; max object slots to check, there are over 83 counting Simba's
+    LDA #$B217 : STA !DP_Address ; first object addr pointer
+    LDA #$7E7E : STA !DP_Address+2 ; object RAM bank
+    LDA #$0002 : STA !DP_Temp ; HUD elements left to find
     LDY #$000A ; offset to object variable for current health/roar on HUD
 
   .loopObjectSlots
     ; check the first pointer of each slot to find the HUD elements
-    LDA [$3A] : CMP #$0001 : BEQ .found ; health bar
+    LDA [!DP_Address] : CMP #$0001 : BEQ .found ; health bar
     CMP #$D5D9 : BEQ .found ; roar bar
-    LDA $3A : CLC : ADC #$0080 : STA $3A ; next object
-    DEC $38 : BNE .loopObjectSlots
+    LDA !DP_Address : CLC : ADC #$0080 : STA !DP_Address ; next object
+    DEC !DP_Maximum : BNE .loopObjectSlots
 
   .done
     RTS
@@ -245,10 +219,10 @@ cm_HUD_refresh:
   .found
     ; store an impossible value to current health/roar to force the HUD
     ; sprite to update because it doesn't match Simba's values at $7E200x
-    LDA #$0050 : STA [$3A],Y
-    LDA $3A : CLC : ADC #$0080 : STA $3A ; next enemy
-    DEC $3E : BEQ .done ; HUD elements left to find
-    DEC $38 ; objects left to check, HUD elements don't always exist
+    LDA #$0050 : STA [!DP_Address],Y
+    LDA !DP_Address : CLC : ADC #$0080 : STA !DP_Address ; next enemy
+    DEC !DP_Temp : BEQ .done ; HUD elements left to find
+    DEC !DP_Maximum ; objects left to check, HUD elements don't always exist
     BRA .loopObjectSlots
 }
 
@@ -359,13 +333,10 @@ cm_tilemap_bg:
 }
 
 cm_tilemap_menu:
-; $3E[0x2] = palette ORA for tilemap entry (for indicating selected menu)
-; $40[0x4] = menu indices
-; $44[0x4] = current menu item index
 {
     LDX.w !ram_cm_stack_index
-    LDA !ram_cm_menu_stack,X : STA $40
-    LDA !ram_cm_menu_bank : STA $42 : STA $46
+    LDA !ram_cm_menu_stack,X : STA !DP_MenuIndices
+    LDA !ram_cm_menu_bank : STA !DP_MenuIndices+2 : STA !DP_CurrentMenu+2
 
     LDY #$0000
   .loop
@@ -379,20 +350,20 @@ cm_tilemap_menu:
     LDA #$0008
 
   .continue
-    STA $3E
+    STA !DP_Palette
 
     ; check for special entries (header, blank line)
-    LDA [$40],Y : BEQ .header
+    LDA [!DP_MenuIndices],Y : BEQ .header
     CMP #$FFFF : BEQ .nextEntry
     ; check if tilemap bounds exceeded (only $640 available)
     CPX #$0640 : BPL .nextEntry
-    STA $44 ; pointer to current menu item
+    STA !DP_CurrentMenu ; pointer to current menu item
 
     PHY : PHX
 
     ; Draw current menu item
     ; X = action index (numfield, toggle, etc)
-    LDA [$44] : INC $44 : INC $44 : TAX
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : TAX
     JSR (cm_draw_action_table,X)
 
     PLX : PLY
@@ -404,22 +375,22 @@ cm_tilemap_menu:
 
   .header
     ; Draw menu header
-    STZ $3E
-    TYA : CLC : ADC $40 : INC #2 : STA $44
+    STZ !DP_Palette
+    TYA : CLC : ADC !DP_MenuIndices : INC #2 : STA !DP_CurrentMenu
     LDX #$00C6
     JSR cm_draw_text
 
     ; Optional footer
-    TYA : CLC : ADC $44 : INC : STA $44
-    LDA [$44] : CMP #$F007 : BNE .done
+    TYA : CLC : ADC !DP_CurrentMenu : INC : STA !DP_CurrentMenu
+    LDA [!DP_CurrentMenu] : CMP #$F007 : BNE .done
 
-    INC $44 : INC $44 : STZ $3E
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : STZ !DP_Palette
     LDX #$0606
     JSR cm_draw_text
     RTL
 
   .done
-    DEC $44 : DEC $44
+    DEC !DP_CurrentMenu : DEC !DP_CurrentMenu
     RTL
 }
 
@@ -459,20 +430,16 @@ cm_draw_action_table:
     dw draw_numfield_time
 
 draw_toggle:
-; $3C[0x2] = toggle value (bitmask)
-; $3E[0x2] = palette ORA for tilemap entry)
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; grab the toggle value
-    LDA [$44] : AND #$00FF : INC $44 : STA $3C
+    LDA [!DP_CurrentMenu] : AND #$00FF : INC !DP_CurrentMenu : STA !DP_Toggle
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -484,37 +451,33 @@ draw_toggle:
     %a8()
 
     ; grab the value at that memory address
-    LDA [$48] : CMP $3C : BEQ .checked
+    LDA [!DP_Address] : CMP !DP_Toggle : BEQ .checked
 
     ; Off
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+0,X
+    LDA #$2900|'F' : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
     ; On
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+2,X
-    LDA #$294D : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+2,X
+    LDA #$2900|'N' : STA !ram_tilemap_buffer+4,X
     RTS
 }
 
 draw_toggle_inverted:
-; $3C[0x2] = toggle value (bitmask)
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; grab the toggle value
-    LDA [$44] : AND #$00FF : INC $44 : STA $3C
+    LDA [!DP_CurrentMenu] : AND #$00FF : INC !DP_CurrentMenu : STA !DP_Toggle
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -526,37 +489,33 @@ draw_toggle_inverted:
     %a8()
 
     ; check the value at that memory address
-    LDA [$48] : CMP $3C : BNE .checked
+    LDA [!DP_Address] : CMP !DP_Toggle : BNE .checked
 
     ; Off
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+0,X
+    LDA #$2900|'F' : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
     ; On
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+2,X
-    LDA #$294D : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+2,X
+    LDA #$2900|'N' : STA !ram_tilemap_buffer+4,X
     RTS
 }
 
 draw_toggle_bit:
-; $3C[0x2] = toggle value (bitmask)
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; grab bitmask
-    LDA [$44] : INC $44 : INC $44 : STA $3C
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Toggle
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -566,37 +525,33 @@ draw_toggle_bit:
     TXA : CLC : ADC #$002C : TAX
 
     ; check the value at that memory address
-    LDA [$48] : AND $3C : BNE .checked
+    LDA [!DP_Address] : AND !DP_Toggle : BNE .checked
 
     ; Off
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+0,X
+    LDA #$2900|'F' : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
     ; On
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+2,X
-    LDA #$294D : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+2,X
+    LDA #$2900|'N' : STA !ram_tilemap_buffer+4,X
     RTS
 }
 
 draw_toggle_bit_inverted:
-; $3C[0x2] = toggle value (bitmask)
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; grab bitmask
-    LDA [$44] : INC $44 : INC $44 : STA $3C
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Toggle
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -606,31 +561,30 @@ draw_toggle_bit_inverted:
     TXA : CLC : ADC #$002C : TAX
 
     ; check the value at that memory address
-    LDA [$48] : AND $3C : BEQ .checked
+    LDA [!DP_Address] : AND !DP_Toggle : BEQ .checked
 
     ; Off
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+0,X
-    LDA #$2945 : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+0,X
+    LDA #$2900|'F' : STA !ram_tilemap_buffer+2,X : STA !ram_tilemap_buffer+4,X
     RTS
 
   .checked
     ; On
     %a16()
-    LDA #$294E : STA !ram_tilemap_buffer+2,X
-    LDA #$294D : STA !ram_tilemap_buffer+4,X
+    LDA #$2900|'O' : STA !ram_tilemap_buffer+2,X
+    LDA #$2900|'N' : STA !ram_tilemap_buffer+4,X
     RTS
 }
 
 draw_jsl_submenu:
 draw_jsl:
-; $44[0x4] = current menu item index
 {
     ; skip JSL address
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; skip argument
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; draw text normally
     %item_index_to_vram_index()
@@ -640,19 +594,16 @@ draw_jsl:
 
 draw_numfield_8bit:
 draw_numfield:
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip bounds and increment values
-    INC $44 : INC $44 : INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -661,48 +612,45 @@ draw_numfield:
     ; set position for the number
     TXA : CLC : ADC #$002C : TAX
 
-    LDA [$48] : AND #$00FF : JSL cm_hex2dec
+    LDA [!DP_Address] : AND #$00FF : JSL cm_hex2dec
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
-                      STA !ram_tilemap_buffer+4,X
+                             STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+4,X
 
     ; Set palette
     %a8()
-    LDA.b !PALETTE_SPECIAL : STA $3F
-    LDA.b #$60 : STA $3E ; points to row of number tiles in VRAM
+    LDA.b !PALETTE_SPECIAL : STA !DP_Palette+1
+    LDA.b #$60 : STA !DP_Palette ; points to row of number tiles in VRAM
 
     ; Draw numbers
     %a16()
     ; ones
-    LDA !ram_hex2dec_third_digit : CLC : ADC $3E : STA !ram_tilemap_buffer+4,X
+    LDA !ram_hex2dec_third_digit : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+4,X
 
     ; tens
     LDA !ram_hex2dec_second_digit : ORA !ram_hex2dec_first_digit : BEQ .done
-    LDA !ram_hex2dec_second_digit : CLC : ADC $3E : STA !ram_tilemap_buffer+2,X
+    LDA !ram_hex2dec_second_digit : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+2,X
 
     LDA !ram_hex2dec_first_digit : BEQ .done
-    CLC : ADC $3E : STA !ram_tilemap_buffer,X
+    CLC : ADC !DP_Palette : STA !ram_tilemap_buffer,X
 
   .done
     RTS
 }
 
 draw_numfield_decimal:
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip bounds and increment values
-    INC $44 : INC $44 : INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -713,43 +661,40 @@ draw_numfield_decimal:
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+2,X
 
     ; Set palette
     %a8()
-    LDA.b !PALETTE_SPECIAL : STA $3F
-    LDA.b #$60 : STA $3E ; points to row of number tiles in VRAM
+    LDA.b !PALETTE_SPECIAL : STA !DP_Palette+1
+    LDA.b #$60 : STA !DP_Palette ; points to row of number tiles in VRAM
 
-    LDA [$48] : TAY
+    LDA [!DP_Address] : TAY
     %a16()
 
     ; Draw numbers
     ; ones
-    AND #$000F : CLC : ADC $3E : STA !ram_tilemap_buffer+2,X
+    AND #$000F : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+2,X
 
     ; tens
     TYA : AND #$00F0 : BEQ .done
-    LSR #4 : CLC : ADC $3E : STA !ram_tilemap_buffer,X
+    LSR #4 : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer,X
 
   .done
     RTS
 }
 
 draw_numfield_word:
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip bounds and increment values
-    INC $44 : INC $44 : INC $44 : INC $44
-    INC $44 : INC $44 : INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -758,55 +703,50 @@ draw_numfield_word:
     ; set position for the number
     TXA : CLC : ADC #$002A : TAX
 
-    LDA [$48] : JSL cm_hex2dec
+    LDA [!DP_Address] : JSL cm_hex2dec
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
-                      STA !ram_tilemap_buffer+4,X
-                      STA !ram_tilemap_buffer+6,X
+                             STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+4,X
+                             STA !ram_tilemap_buffer+6,X
 
     ; Set palette and tile row
     %a8()
-    LDA.b !PALETTE_SPECIAL : STA $3F
-    LDA.b #$60 : STA $3E ; points to row of number tiles
+    LDA.b !PALETTE_SPECIAL : STA !DP_Palette+1
+    LDA.b #$60 : STA !DP_Palette ; points to row of number tiles
 
     ; Draw numbers, which are tiles 60-69 in VRAM
     %a16()
     ; ones
-    LDA !ram_hex2dec_third_digit : CLC : ADC $3E : STA !ram_tilemap_buffer+6,X
+    LDA !ram_hex2dec_third_digit : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+6,X
 
     ; tens
     LDA !ram_hex2dec_second_digit : ORA !ram_hex2dec_first_digit
     ORA !ram_hex2dec_rest : BEQ .done
-    LDA !ram_hex2dec_second_digit : CLC : ADC $3E : STA !ram_tilemap_buffer+4,X
+    LDA !ram_hex2dec_second_digit : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+4,X
 
     LDA !ram_hex2dec_first_digit : ORA !ram_hex2dec_rest : BEQ .done
-    LDA !ram_hex2dec_first_digit : CLC : ADC $3E : STA !ram_tilemap_buffer+2,X
+    LDA !ram_hex2dec_first_digit : CLC : ADC !DP_Palette : STA !ram_tilemap_buffer+2,X
 
     LDA !ram_hex2dec_rest : BEQ .done
-    CLC : ADC $3E : STA !ram_tilemap_buffer,X
+    CLC : ADC !DP_Palette : STA !ram_tilemap_buffer,X
 
   .done
     RTS
 }
 
 draw_numfield_time:
-; $38[0x2] = 16bit decimal frames
-; $3A[0x2] = 16bit decimal seconds
-; $3C[0x2] = 16bit decimal minutes
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to load
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip JSL target
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; skip JSL argument
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; draw the text
     %item_index_to_vram_index()
@@ -823,14 +763,14 @@ draw_numfield_time:
     LDA #$00 : XBA ; clear high byte
     LDA !ram_cm_difficulty : ASL #5
     ADC #$02 : TAY
-    LDA [$48],Y : CMP #$10 : BPL .done
-    STA $3C : DEY ; minutes
-    LDA [$48],Y : STA $3A : DEY ; seconds
-    LDA [$48],Y : STA $38 ; frames
+    LDA [!DP_Address],Y : CMP #$10 : BPL .done
+    STA !DP_Minutes : DEY
+    LDA [!DP_Address],Y : STA !DP_Seconds : DEY
+    LDA [!DP_Address],Y : STA !DP_Frames
     %a16()
 
     ; draw minutes digit
-    LDA $3C : AND #$000F : ASL : TAY
+    LDA !DP_Minutes : AND #$000F : ASL : TAY
     INX #2
     LDA.w HexToNumberGFX2,Y : STA !ram_tilemap_buffer,X
     INX #2
@@ -841,7 +781,7 @@ draw_numfield_time:
     INX #2
 
     ; draw seconds digits
-    LDA $3A : AND #$00FF : JSL cm_dec2hex
+    LDA !DP_Seconds : AND #$00FF : JSL cm_dec2hex
     ASL : TAY
     LDA.w HexToNumberGFX1,Y : STA !ram_tilemap_buffer,X
     INX #2
@@ -849,7 +789,7 @@ draw_numfield_time:
     INX #4 ; skip a tile for the colon
 
     ; draw frames digits
-    LDA $38 : AND #$00FF : JSL cm_dec2hex
+    LDA !DP_Frames : AND #$00FF : JSL cm_dec2hex
     ASL : TAY
     LDA.w HexToNumberGFX1,Y : STA !ram_tilemap_buffer,X
     INX #2
@@ -864,20 +804,16 @@ draw_numfield_time:
 
 draw_numfield_sound:
 draw_numfield_hex:
-; $38[0x2] = 8bit value (low byte) at memory address
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip bounds and increment values
-    INC $44 : INC $44 : INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -887,11 +823,11 @@ draw_numfield_hex:
     TXA : CLC : ADC #$002E : TAX
 
     ; load 8bit value from address
-    LDA [$48] : AND #$00FF : STA $38
+    LDA [!DP_Address] : AND #$00FF : STA !DP_Value
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+2,X
 
     ; Set data bank for HexGFXTable
     PHB
@@ -900,11 +836,11 @@ draw_numfield_hex:
 
     ; Draw numbers
     ; (00X0)
-    LDA $38 : AND #$00F0 : LSR #3 : TAY
+    LDA !DP_Value : AND #$00F0 : LSR #3 : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer,X
     
     ; (000X)
-    LDA $38 : AND #$000F : ASL : TAY
+    LDA !DP_Value : AND #$000F : ASL : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer+2,X
 
     PLB
@@ -912,17 +848,13 @@ draw_numfield_hex:
 }
 
 draw_numfield_color:
-; $38[0x2] = 8bit value (low byte) at memory address
-; $3E[0x2] = temp RAM for math
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; increment past JSL
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -932,11 +864,11 @@ draw_numfield_color:
     TXA : CLC : ADC #$002E : TAX
 
     ; load 8bit value from address
-    LDA [$48] : AND #$00FF : STA $38
+    LDA [!DP_Address] : AND #$00FF : STA !DP_Value
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+2,X
 
     ; Set data bank for HexGFXTable
     PHB
@@ -945,12 +877,12 @@ draw_numfield_color:
 
     ; Draw numbers
     ; (00X0)
-    LDA $38 : AND #$001E : TAY
+    LDA !DP_Value : AND #$001E : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer,X
 
     ; (000X)
-    LDA $38 : AND #$0001 : ASL #4 : STA $3E
-    LDA $38 : AND #$001C : LSR : CLC : ADC $3E : TAY
+    LDA !DP_Value : AND #$0001 : ASL #4 : STA !DP_Temp
+    LDA !DP_Value : AND #$001C : LSR : CLC : ADC !DP_Temp : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer+2,X
 
     PLB
@@ -958,14 +890,10 @@ draw_numfield_color:
 }
 
 draw_numfield_hex_word:
-; $38[0x2] = value at memory address
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -975,13 +903,13 @@ draw_numfield_hex_word:
     TXA : CLC : ADC #$002C : TAX
 
     ; load value from address
-    LDA [$48] : STA $38
+    LDA [!DP_Address] : STA !DP_Value
 
     ; Clear out the area (black tile)
     LDA !ram_cm_blank_tile : STA !ram_tilemap_buffer+0,X
-                      STA !ram_tilemap_buffer+2,X
-                      STA !ram_tilemap_buffer+4,X
-                      STA !ram_tilemap_buffer+6,X
+                             STA !ram_tilemap_buffer+2,X
+                             STA !ram_tilemap_buffer+4,X
+                             STA !ram_tilemap_buffer+6,X
 
     ; Set data bank for HexGFXTable
     PHB
@@ -990,19 +918,19 @@ draw_numfield_hex_word:
 
     ; Draw numbers
     ; (X000)
-    LDA $38 : AND #$F000 : XBA : LSR #3 : TAY
+    LDA !DP_Value : AND #$F000 : XBA : LSR #3 : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer,X
 
     ; (0X00)
-    LDA $38 : AND #$0F00 : XBA : ASL : TAY
+    LDA !DP_Value : AND #$0F00 : XBA : ASL : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer+2,X
 
     ; (00X0)
-    LDA $38 : AND #$00F0 : LSR #3 : TAY
+    LDA !DP_Value : AND #$00F0 : LSR #3 : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer+4,X
 
     ; (000X)
-    LDA $38 : AND #$000F : ASL : TAY
+    LDA !DP_Value : AND #$000F : ASL : TAY
     LDA.w HexGFXTable,Y : STA !ram_tilemap_buffer+6,X
 
     PLB
@@ -1010,17 +938,13 @@ draw_numfield_hex_word:
 }
 
 draw_choice:
-; $38[0x2] = value at memory address
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip JSL target
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text first
     %item_index_to_vram_index()
@@ -1030,7 +954,7 @@ draw_choice:
     TXA : CLC : ADC #$001C : TAX
 
     ; use address as index
-    LDA [$48] : TAY
+    LDA [!DP_Address] : TAY
 
     ; find the correct text that should be drawn (the selected choice)
     ; read through the text and DEY until zero to find selected choice
@@ -1040,7 +964,7 @@ draw_choice:
 
   .loop_text
     ; text is 8bit, pointer is 16bit :( 
-    LDA [$44] : %a16() : INC $44 : %a8()
+    LDA [!DP_CurrentMenu] : %a16() : INC !DP_CurrentMenu : %a8()
     CMP #$FF : BEQ .loop_choices
     BRA .loop_text
 
@@ -1053,18 +977,16 @@ draw_choice:
 }
 
 draw_ctrl_shortcut:
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
-    LDA [$44] : INC $44 : INC $44 : STA $48
-    LDA [$44] : STA $4A : INC $44
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     %item_index_to_vram_index()
     PHX
     JSR cm_draw_text
     PLA : CLC : ADC #$0022 : TAX
 
-    LDA [$48]
+    LDA [!DP_Address]
     JSR menu_ctrl_input_display
 
     RTS
@@ -1072,19 +994,17 @@ draw_ctrl_shortcut:
 
 draw_controller_input:
 ; unused, needs ram addresses from the game to function
-; $44[0x4] = current menu item index
-; $48[0x4] = memory address (long) to manipulate
 {
     ; grab the memory address (long)
-    LDA [$44] : INC $44 : INC $44 : STA $48
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : INC !DP_CurrentMenu : STA !DP_Address
 ;    STA !ram_cm_ctrl_assign
-    LDA [$44] : INC $44 : STA $4A
+    LDA [!DP_CurrentMenu] : INC !DP_CurrentMenu : STA !DP_Address+2
 
     ; skip JSL target
-;    INC $44 : INC $44
+;    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; skip JSL argument
-    INC $44 : INC $44
+    INC !DP_CurrentMenu : INC !DP_CurrentMenu
 
     ; Draw the text
     %item_index_to_vram_index()
@@ -1093,16 +1013,16 @@ draw_controller_input:
     ; set position for the input
     TXA : CLC : ADC #$0020 : TAX
 
-    LDA ($48) : AND #$E0F0 : BEQ .unbound
+    LDA (!DP_Address) : AND #$E0F0 : BEQ .unbound
 
     ; determine which input to draw, using Y to refresh A
-    TAY : AND #$0080 : BEQ + : LDY #$0000 : BRA .draw
-+   TYA : AND #$8000 : BEQ + : LDY #$0002 : BRA .draw
-+   TYA : AND #$0040 : BEQ + : LDY #$0004 : BRA .draw
-+   TYA : AND #$4000 : BEQ + : LDY #$0006 : BRA .draw
-+   TYA : AND #$0020 : BEQ + : LDY #$0008 : BRA .draw
-+   TYA : AND #$0010 : BEQ + : LDY #$000A : BRA .draw
-+   TYA : AND #$2000 : BEQ .unbound : LDY #$000C
+    TAY : AND !CTRL_A : BEQ + : LDY #$0000 : BRA .draw
++   TYA : AND !CTRL_B : BEQ + : LDY #$0002 : BRA .draw
++   TYA : AND !CTRL_X : BEQ + : LDY #$0004 : BRA .draw
++   TYA : AND !CTRL_Y : BEQ + : LDY #$0006 : BRA .draw
++   TYA : AND !CTRL_L : BEQ + : LDY #$0008 : BRA .draw
++   TYA : AND !CTRL_R : BEQ + : LDY #$000A : BRA .draw
++   TYA : AND !CTRL_SELECT : BEQ .unbound : LDY #$000C
 
   .draw
     LDA.w CtrlMenuGFXTable,Y : STA !ram_tilemap_buffer,X
@@ -1121,25 +1041,23 @@ CtrlMenuGFXTable:
 
 cm_draw_text:
 ; X = pointer to tilemap area (STA !ram_tilemap_buffer,X)
-; $3E[0x2] = palette ORA for tilemap entry
-; $44[0x4] = pointer to current text
 {
     %a8()
     LDY #$0000
-    ; FF = terminator
-    LDA [$44],Y : INY : CMP #$FF : BEQ .end
+    ; $FF = terminator
+    LDA [!DP_CurrentMenu],Y : INY : CMP #$FF : BEQ .end
 
     ; Special palette shouldn't be "selected"
     CMP !PALETTE_SPECIAL : BNE +
-    STA $3E : BRA .loop
+    STA !DP_Palette : BRA .loop
 
     ; ORA with palette info
-+   ORA $3E : STA $3E
++   ORA !DP_Palette : STA !DP_Palette
 
   .loop
-    LDA [$44],Y : CMP #$FF : BEQ .end    ; check if terminator
-    STA !ram_tilemap_buffer,X : INX      ; store tile
-    LDA $3E : STA !ram_tilemap_buffer,X  ; store palette
+    LDA [!DP_CurrentMenu],Y : CMP #$FF : BEQ .end ; check if terminator
+    STA !ram_tilemap_buffer,X : INX               ; store tile
+    LDA !DP_Palette : STA !ram_tilemap_buffer,X   ; store palette
     INX : INY
     JMP .loop
 
@@ -1153,10 +1071,9 @@ cm_draw_text:
 ; --------------
 
 menu_ctrl_input_display:
-; $3E[0x2] = palette ORA for tilemap entry
+; X = pointer to tilemap area (STA !ram_tilemap_buffer,X)
+; A = Controller word
 {
-    ; X = pointer to tilemap area (STA !ram_tilemap_buffer,X)
-    ; A = Controller word
     JSR menu_ctrl_clear_input_display
 
     XBA
@@ -1166,12 +1083,13 @@ menu_ctrl_input_display:
     BIT #$0001 : BEQ .no_draw
 
     TYA : CLC : ADC #$0070
-    XBA : ORA $3E : XBA
+    XBA : ORA !DP_Palette : XBA
     STA !ram_tilemap_buffer,X : INX #2
 
   .no_draw
     PLA
-    INY : LSR : BNE .loop
+    INY
+    LSR : BNE .loop
 
   .done
     RTS
@@ -1179,8 +1097,8 @@ menu_ctrl_input_display:
 
 
 menu_ctrl_clear_input_display:
+; X = pointer to tilemap area
 {
-    ; X = pointer to tilemap area
     PHA
     LDA !ram_cm_blank_tile
     STA !ram_tilemap_buffer+0,X
@@ -1203,7 +1121,7 @@ menu_ctrl_clear_input_display:
 
 cm_loop:
 {
-    JSL wait_for_NMI  ; Wait for next frame
+    JSL wait_for_NMI ; Wait for next frame
     %a8()
     LDA #$0F : STA $0F2100 ; ensure full brightness
     %a16()
@@ -1285,7 +1203,7 @@ cm_ctrl_mode:
     LDA !LK_Controller_Current
 
     ; set palette
-    %a8() : LDA !PALETTE_SPECIAL : STA $3E : %a16()
+    %a8() : LDA !PALETTE_SPECIAL : STA !DP_Palette : %a16()
 
     LDA !LK_Controller_Current : BEQ .clear_and_draw
     CMP !ram_cm_ctrl_last_input : BNE .clear_and_draw
@@ -1293,7 +1211,7 @@ cm_ctrl_mode:
     ; Holding an input for more than one second
     LDA !ram_cm_ctrl_timer : INC : STA !ram_cm_ctrl_timer : CMP.w #0060 : BNE .next_frame
 
-    LDA !LK_Controller_Current : STA [$38]
+    LDA !LK_Controller_Current : STA [!DP_Value]
 ;    %sfx macro goes here
     BRA .exit
 
@@ -1345,7 +1263,7 @@ cm_go_back:
   .done
     STA !ram_cm_stack_index    
     LDA !ram_cm_stack_index : BNE .end
-    LDA.l #MainMenu>>16       ; Reset submenu bank when back at main menu
+    LDA.l #MainMenu>>16 ; Reset submenu bank when back at main menu
     STA !ram_cm_menu_bank
     LDA #$0000 : STA !ram_mem_editor_active
 
@@ -1356,16 +1274,15 @@ cm_go_back:
 
 cm_calculate_max:
 ; Determines the cursor's max/last position
-; $40[0x4] = menu indices
 {
     LDX.w !ram_cm_stack_index
-    LDA !ram_cm_menu_stack,X : STA $40
-    LDA !ram_cm_menu_bank : STA $42
+    LDA !ram_cm_menu_stack,X : STA !DP_MenuIndices
+    LDA !ram_cm_menu_bank : STA !DP_MenuIndices+2
 
     LDX #$0000
   .loop
-    LDA [$40] : BEQ .done
-    INC $40 : INC $40
+    LDA [!DP_MenuIndices] : BEQ .done
+    INC !DP_MenuIndices : INC !DP_MenuIndices
     INX #2
     BRA .loop
 
@@ -1412,7 +1329,7 @@ cm_move:
 ; $38[0x2] = number of lines moved * 2
 ; $40[0x4] = current menu item index
 {
-    STA $38
+    STA !DP_Temp
     LDX.w !ram_cm_stack_index
     CLC : ADC !ram_cm_cursor_stack,X : BPL .positive
     LDA !ram_cm_cursor_max : DEC #2 : BRA .inBounds
@@ -1424,13 +1341,13 @@ cm_move:
   .inBounds
     STA !ram_cm_cursor_stack,X : TAY
 
-    LDA !ram_cm_menu_stack,X : STA $40
-    LDA !ram_cm_menu_bank : STA $42
+    LDA !ram_cm_menu_stack,X : STA !DP_MenuIndices
+    LDA !ram_cm_menu_bank : STA !DP_MenuIndices+2
 
     ; check for blank menu line ($FFFF)
-    LDA [$40],Y : CMP #$FFFF : BNE .end
+    LDA [!DP_MenuIndices],Y : CMP #$FFFF : BNE .end
 
-    LDA $38 : BRA cm_move
+    LDA !DP_Temp : BRA cm_move
 
   .end
 ;    %sfxmove()
@@ -1443,7 +1360,7 @@ action_mainmenu:
     ; Set bank of new menu
     LDA !ram_cm_cursor_stack : TAX
     LDA.l MainMenuBanks,X : STA !ram_cm_menu_bank
-    STA $42 : STA $46
+    STA !DP_MenuIndices+2 : STA !DP_CurrentMenu+2
 
     BRA action_submenu_skipStackOp
 }
@@ -1474,17 +1391,15 @@ action_submenu:
 ; --------
 
 cm_execute:
-; $40[0x4] = submenu item, current menu item index
 {
-    ; $40 = submenu item
     LDX.w !ram_cm_stack_index
-    LDA !ram_cm_menu_stack,X : STA $40
-    LDA !ram_cm_menu_bank : STA $42
+    LDA !ram_cm_menu_stack,X : STA !DP_MenuIndices
+    LDA !ram_cm_menu_bank : STA !DP_MenuIndices+2
     LDA !ram_cm_cursor_stack,X : TAY
-    LDA [$40],Y : STA $40
+    LDA [!DP_MenuIndices],Y : STA !DP_MenuIndices
 
     ; Load and increment past the action index
-    LDA [$40] : INC $40 : INC $40 : TAX
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : TAX
 
     ; Safety net incase blank line selected
     CPX #$FFFF : BEQ +
@@ -1515,45 +1430,41 @@ cm_execute_action_table:
     dw execute_numfield_time
 
 execute_toggle:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = toggle value (bitmask)
 {
     ; Grab address
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
     ; Load which bit(s) to toggle, 8-bit only
-    LDA [$40] : INC $40 : AND #$00FF : STA $48
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Toggle
 
     ; Grab JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; On or Off?
     %a8()
-    LDA [$44] : CMP $48 : BEQ .toggleOff
+    LDA [!DP_Address] : CMP !DP_Toggle : BEQ .toggleOff
 
     ; Store toggle value to address
-    LDA $48 : STA [$44]
+    LDA !DP_Toggle : STA [!DP_Address]
     BRA .jsl
 
   .toggleOff
     ; Clear memory address
-    LDA #$00 : STA [$44]
+    LDA #$00 : STA [!DP_Address]
 
   .jsl
     ; Check if JSL target exists
     %a16()
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1562,34 +1473,30 @@ execute_toggle:
 }
 
 execute_toggle_bit:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = toggle value (bitmask)
 {
     ; Load the address
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
     ; Load which bit(s) to toggle
-    LDA [$40] : INC $40 : INC $40 : STA $48
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Toggle
 
     ; Load JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Toggle the bit
-    LDA [$44] : EOR $48 : STA [$44]
+    LDA [!DP_Address] : EOR !DP_Toggle : STA [!DP_Address]
 
     ; Check if JSL target exists
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1598,29 +1505,27 @@ execute_toggle_bit:
 }
 
 execute_jsl_submenu:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
 {
     ; <, > and X should do nothing here
     ; also ignore input held flag
     LDA !ram_cm_controller : BIT #$0341 : BNE .end
 
-    ; $0000 = JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    ; JSL target
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Set bank of action_submenu
     ; instead of the menu we're jumping to
-    LDA.l #action_submenu>>16 : STA $0002
+    LDA.l #action_submenu>>16 : STA !DP_JSLTarget+2
 
     ; Set return address for indirect JSL
     PHK : PEA .end-1
 
     ; Y = Argument
-    LDA [$40] : TAY
+    LDA [!DP_MenuIndices] : TAY
 
     ; Jump to routine
     LDX #$0000
-    JML [$0000]
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1628,26 +1533,24 @@ execute_jsl_submenu:
 }
 
 execute_jsl:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
 {
     ; <, > and X should do nothing here
     ; also ignore input held flag
     LDA !ram_cm_controller : BIT #$0341 : BNE .end
 
-    ; $0000 = JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    ; JSL target
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Y = Argument
-    LDA [$40] : TAY
+    LDA [!DP_MenuIndices] : TAY
 
     ; Jump to routine
     LDX #$0000
-    JML [$0000]
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1656,63 +1559,57 @@ execute_jsl:
 
 execute_numfield_hex:
 execute_numfield:
-; $0000[0x4] = indirect long jump pointer
-; $3C[0x2] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
-; $4A[0x2] = maximum value plus one
 {
     ; Load memory address to manipulate
-    LDA [$40] : INC $40 : INC $40 : STA $44 ; addr
-    LDA [$40] : INC $40 : STA $46 ; bank
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2 ; bank
 
     ; Load minimum and maximum values
-    LDA [$40] : INC $40 : AND #$00FF : STA $48 ; max
-    LDA [$40] : INC $40 : AND #$00FF : INC : STA $4A ; min, INC for convenience
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Minimum
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : INC : STA !DP_Maximum ; INC for convenience
 
     LDA !ram_cm_controller : BIT #$0001 : BNE .input_held
     ; Load the normal increment value
-    LDA [$40] : INC $40 : INC $40 : AND #$00FF : STA $3C
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
     BRA .load_jsl_target
 
   .input_held
     ; Load the faster increment value
-    INC $40 : LDA [$40] : INC $40 : AND #$00FF : STA $3C
+    INC !DP_MenuIndices : LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
 
   .load_jsl_target
     ; Load pointer for routine to run next
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
-    LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
+    LDA !ram_cm_controller : BIT !CTRL_LEFT : BNE .pressed_left
     ; pressed right, inc
-    LDA [$44] : CLC : ADC $3C
-    CMP $4A : BCS .set_to_min
-    PHP : %a8() : STA [$44] : PLP : BRA .jsl
+    LDA [!DP_Address] : CLC : ADC !DP_Increment
+    CMP !DP_Maximum : BCS .set_to_min
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .jsl
 
   .pressed_left ; dec
-    LDA [$44] : SEC : SBC $3C
-    CMP $48 : BMI .set_to_max
-    CMP $4A : BCS .set_to_max
-    PHP : %a8() : STA [$44] : PLP : BRA .jsl
+    LDA [!DP_Address] : SEC : SBC !DP_Increment
+    CMP !DP_Minimum : BMI .set_to_max
+    CMP !DP_Maximum : BCS .set_to_max
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .jsl
 
   .set_to_min
-    LDA $48 : PHP : %a8() : STA [$44] : PLP : CLC : BRA .jsl
+    LDA !DP_Minimum : PHP : %a8() : STA [!DP_Address] : PLP : CLC : BRA .jsl
 
   .set_to_max
-    LDA $4A : DEC : PHP : %a8() : STA [$44] : PLP : CLC
+    LDA !DP_Maximum : DEC : PHP : %a8() : STA [!DP_Address] : PLP : CLC
 
   .jsl
     ; Check if JSL target exists
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1721,80 +1618,74 @@ execute_numfield:
 }
 
 execute_numfield_8bit:
-; $0000[0x4] = indirect long jump pointer
-; $3C[0x2] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
-; $4A[0x2] = maximum value plus one
 {
     ; Load memory address to manipulate
-    LDA [$40] : INC $40 : INC $40 : STA $44 ; addr
-    LDA [$40] : INC $40 : STA $46 ; bank
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
     ; Load min/max values
-    LDA [$40] : INC $40 : AND #$00FF : STA $48
-    LDA [$40] : INC $40 : AND #$00FF : INC : STA $4A ; INC for convenience
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Minimum
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : INC : STA !DP_Maximum ; INC for convenience
 
     ; Check if input held flag is set
     LDA !ram_cm_controller : BIT #$0001 : BNE .input_held
     ; Use normal increment value
-    LDA [$40] : INC $40 : INC $40 : AND #$00FF : STA $3C
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
     BRA .load_jsl_target
 
   .input_held
     ; Use the faster increment value
-    INC $40 : LDA [$40] : INC $40 : AND #$00FF : STA $3C
+    INC !DP_MenuIndices : LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
 
   .load_jsl_target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Check direction input
-    LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
+    LDA !ram_cm_controller : BIT !CTRL_LEFT : BNE .pressed_left
 
     ; Pressed right, inc
-    LDA [$44] : AND #$00FF : CLC : ADC $3C
+    LDA [!DP_Address] : AND #$00FF : CLC : ADC !DP_Increment
 
     ; Check if above maximum
-    CMP $4A : BCS .set_to_min
+    CMP !DP_Maximum : BCS .set_to_min
 
     ; Store 8-bit value
-    PHP : %a8() : STA [$44] : PLP
+    PHP : %a8() : STA [!DP_Address] : PLP
     BRA .jsl
 
   .pressed_left ; dec
-    LDA [$44] : AND #$00FF : SEC : SBC $3C
+    LDA [!DP_Address] : AND #$00FF : SEC : SBC !DP_Increment
     ; Check if below minimum
-    CMP $48 : BMI .set_to_max
+    CMP !DP_Minimum : BMI .set_to_max
 
     ; Check if above maximum
-    CMP $4A : BCS .set_to_min
+    CMP !DP_Maximum : BCS .set_to_min
 
     ; Store 8-bit value
-    PHP : %a8() : STA [$44] : PLP
+    PHP : %a8() : STA [!DP_Address] : PLP
     BRA .jsl
 
   .set_to_min
-    LDA $48
-    PHP : %a8() : STA [$44] : PLP
+    LDA !DP_Minimum
+    PHP : %a8() : STA [!DP_Address] : PLP
     CLC : BRA .jsl
 
   .set_to_max
-    LDA $4A : DEC
-    PHP : %a8() : STA [$44] : PLP
+    LDA !DP_Maximum : DEC
+    PHP : %a8() : STA [!DP_Address] : PLP
     CLC
 
   .jsl
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load 8-bit address in A and jump to routine
-    LDA [$44] : AND #$00FF
+    LDA [!DP_Address] : AND #$00FF
     LDX #$0000
-    JML [$0000]
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1803,77 +1694,71 @@ execute_numfield_8bit:
 }
 
 execute_numfield_decimal:
-; $0000[0x4] = indirect long jump pointer
-; $3C[0x2] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
-; $4A[0x2] = maximum value
 {
     ; Load memory address to manipulate
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
-    LDA [$40] : INC $40 : AND #$00FF : STA $48
-    LDA [$40] : INC $40 : AND #$00FF : INC : STA $4A ; INC for convenience
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Minimum
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : INC : STA !DP_Maximum ; INC for convenience
 
     LDA !ram_cm_controller : BIT #$0001 : BNE .input_held
-    LDA [$40] : INC $40 : INC $40 : AND #$00FF : STA $3C
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
     BRA .inc_or_dec
 
   .input_held
-    INC $40 : LDA [$40] : INC $40 : AND #$00FF : STA $3C
+    INC !DP_MenuIndices : LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
 
   .inc_or_dec
-    LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
-    LDA [$44] : AND #$00FF : JSL cm_dec2hex
+    LDA !ram_cm_controller : BIT !CTRL_LEFT : BNE .pressed_left
+    LDA [!DP_Address] : AND #$00FF : JSL cm_dec2hex
     
-    CLC : ADC $3C
-    CMP $4A : BCS .set_to_min
+    CLC : ADC !DP_Increment
+    CMP !DP_Maximum : BCS .set_to_min
 
     JSL cm_hex2dec
     LDA !ram_hex2dec_second_digit : ASL #4
     ORA !ram_hex2dec_third_digit
 
-    PHP : %a8() : STA [$44] : PLP : BRA .jsl
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .jsl
 
   .pressed_left
-    LDA [$44] : AND #$00FF : JSL cm_dec2hex
+    LDA [!DP_Address] : AND #$00FF : JSL cm_dec2hex
     
-    SEC : SBC $3C : CMP $48 : BMI .set_to_max
-    CMP $4A : BCS .set_to_max
+    SEC : SBC !DP_Increment : CMP !DP_Minimum : BMI .set_to_max
+    CMP !DP_Maximum : BCS .set_to_max
 
     JSL cm_hex2dec
     LDA !ram_hex2dec_second_digit : ASL #4
     ORA !ram_hex2dec_third_digit
 
-    PHP : %a8() : STA [$44] : PLP : BRA .jsl
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .jsl
 
   .set_to_min
-    LDA $48 : JSL cm_hex2dec
+    LDA !DP_Minimum : JSL cm_hex2dec
     LDA !ram_hex2dec_second_digit : ASL #4
     ORA !ram_hex2dec_third_digit
 
-    PHP : %a8() : STA [$44] : PLP : BRA .jsl
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .jsl
 
   .set_to_max
-    LDA $4A : DEC : JSL cm_hex2dec
+    LDA !DP_Maximum : DEC : JSL cm_hex2dec
     LDA !ram_hex2dec_second_digit : ASL #4
     ORA !ram_hex2dec_third_digit
 
-    PHP : %a8() : STA [$44] : PLP
+    PHP : %a8() : STA [!DP_Address] : PLP
 
   .jsl
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
     BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1882,61 +1767,57 @@ execute_numfield_decimal:
 }
 
 execute_numfield_word:
-; $0000[0x4] = indirect long jump pointer
-; $3C[0x2] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
-; $4A[0x2] = maximum value
 {
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
-    LDA [$40] : INC $40 : INC $40 : STA $48
-    LDA [$40] : INC $40 : INC $40 : INC : STA $4A ; INC for convenience
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Minimum
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : INC : STA !DP_Maximum ; INC for convenience
 
     LDA !ram_cm_controller : BIT #$0001 : BNE .input_held
-    LDA [$40] : INC $40 : INC $40 : INC $40 : INC $40 : STA $3C
+    LDA [!DP_MenuIndices] : STA !DP_Increment
+    INC !DP_MenuIndices : INC !DP_MenuIndices : INC !DP_MenuIndices : INC !DP_MenuIndices
     BRA .load_jsl_target
 
   .input_held
-    INC $40 : INC $40 : LDA [$40] : INC $40 : INC $40 : STA $3C
+    INC !DP_MenuIndices : INC !DP_MenuIndices
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Increment
 
   .load_jsl_target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
 
-    LDA [$44] : CLC : ADC $3C
+    LDA [!DP_Address] : CLC : ADC !DP_Increment
 
-    CMP $4A : BCS .set_to_min
+    CMP !DP_Maximum : BCS .set_to_min
 
-    STA [$44] : BRA .jsl
+    STA [!DP_Address] : BRA .jsl
 
   .pressed_left
-    LDA [$44] : SEC : SBC $3C
-    CMP $48 : BMI .set_to_max
+    LDA [!DP_Address] : SEC : SBC !DP_Increment
+    CMP !DP_Minimum : BMI .set_to_max
 
-    CMP $4A : BCS .set_to_max
+    CMP !DP_Maximum : BCS .set_to_max
 
-    STA [$44] : BRA .jsl
+    STA [!DP_Address] : BRA .jsl
 
   .set_to_min
-    LDA $48 : STA [$44] : CLC : BRA .jsl
+    LDA !DP_Minimum : STA [!DP_Address] : CLC : BRA .jsl
 
   .set_to_max
-    LDA $4A : DEC : STA [$44] : CLC
+    LDA !DP_Maximum : DEC : STA [!DP_Address] : CLC
 
   .jsl
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1945,44 +1826,38 @@ execute_numfield_word:
 }
 
 execute_numfield_color:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
 {
-    ; $44[0x3] = memory address to manipulate
-    ; $00[0x3] = JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
 
     ; pressed right, max = $1F
-    LDA [$44] : INC : CMP #$0020 : BCS .set_to_min
-    STA [$44] : BRA .jsl
+    LDA [!DP_Address] : INC : CMP #$0020 : BCS .set_to_min
+    STA [!DP_Address] : BRA .jsl
 
   .pressed_left
-    LDA [$44] : DEC : BMI .set_to_max
-    STA [$44] : BRA .jsl
+    LDA [!DP_Address] : DEC : BMI .set_to_max
+    STA [!DP_Address] : BRA .jsl
 
   .set_to_min
-    LDA #$0000 : STA [$44] : CLC : BRA .jsl
+    LDA #$0000 : STA [!DP_Address] : CLC : BRA .jsl
 
   .set_to_max
-    LDA #$001F : STA [$44] : CLC
+    LDA #$001F : STA [!DP_Address] : CLC
 
   .jsl
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -1991,54 +1866,48 @@ execute_numfield_color:
 }
 
 execute_numfield_sound:
-; $0000[0x4] = indirect long jump pointer
-; $3C[0x2] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
-; $48[0x2] = minimum value
-; $4A[0x2] = maximum value
 {
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
-    LDA [$40] : INC $40 : AND #$00FF : STA $48
-    LDA [$40] : INC $40 : AND #$00FF : INC : STA $4A ; INC for convenience
-    LDA [$40] : INC $40 : AND #$00FF : STA $3C
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Minimum
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : INC : STA !DP_Maximum ; INC for convenience
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : AND #$00FF : STA !DP_Increment
 
     ; 4x scroll speed if Y held
-    LDA !LK_Controller_Current : AND #$4000 : BEQ +
-    LDA $3C : ASL #2 : STA $3C
+    LDA !LK_Controller_Current : AND !CTRL_Y : BEQ +
+    LDA !DP_Increment : ASL #2 : STA !DP_Increment
 
-+   INC $40 : LDA [$40] : STA $0000
++   INC !DP_MenuIndices : LDA [!DP_MenuIndices] : STA !DP_JSLTarget
 
-    LDA !ram_cm_controller : BIT #$4000 : BNE .jsr ; check for Y pressed
-    LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
+    LDA !ram_cm_controller : BIT !CTRL_Y : BNE .jsr
+    LDA !ram_cm_controller : BIT !CTRL_LEFT : BNE .pressed_left
 
-    LDA [$44] : CLC : ADC $3C
-    CMP $4A : BCS .set_to_min
-    PHP : %a8() : STA [$44] : PLP : BRA .end
+    LDA [!DP_Address] : CLC : ADC !DP_Increment
+    CMP !DP_Maximum : BCS .set_to_min
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .end
 
   .pressed_left
-    LDA [$44] : SEC : SBC $3C : CMP $48 : BMI .set_to_max
-    CMP $4A : BCS .set_to_max
-    PHP : %a8() : STA [$44] : PLP : BRA .end
+    LDA [!DP_Address] : SEC : SBC !DP_Increment : CMP !DP_Minimum : BMI .set_to_max
+    CMP !DP_Maximum : BCS .set_to_max
+    PHP : %a8() : STA [!DP_Address] : PLP : BRA .end
 
   .set_to_min
-    LDA $48 : PHP : %a8() : STA [$44] : PLP : CLC : BRA .end
+    LDA !DP_Minimum : PHP : %a8() : STA [!DP_Address] : PLP : CLC : BRA .end
 
   .set_to_max
-    LDA $4A : DEC : PHP : %a8() : STA [$44] : PLP : CLC : BRA .end
+    LDA !DP_Maximum : DEC : PHP : %a8() : STA [!DP_Address] : PLP : CLC : BRA .end
 
   .jsr
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -2052,28 +1921,25 @@ execute_numfield_hex_word:
 }
 
 execute_numfield_time:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
 {
     ; <, > and X should do nothing here
     ; also ignore input held flag
     LDA !ram_cm_controller : BIT #$0341 : BNE .end
 
     ; Skip past address
-    INC $40 : INC $40 : INC $40
+    INC !DP_MenuIndices : INC !DP_MenuIndices : INC !DP_MenuIndices
 
-    ; $0000 = JSL target
-    LDA [$40] : BEQ .end
-    INC $40 : INC $40 : STA $0000
+    ; JSL target
+    LDA [!DP_MenuIndices] : BEQ .end
+    INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
-    ; Preload arX/Y = Argument
     ; Pre-load argument in A/X/Y and jump to routine
-    LDA [$40] : TAY : TAX
-    JML [$0000]
+    LDA [!DP_MenuIndices] : TAY : TAX
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -2081,36 +1947,32 @@ execute_numfield_time:
 }
 
 execute_choice:
-; $0000[0x4] = indirect long jump pointer
-; $38[0x2] = temp comparison
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
 {
     %a16()
-    LDA [$40] : INC $40 : INC $40 : STA $44
-    LDA [$40] : INC $40 : STA $46
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_Address
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : STA !DP_Address+2
 
     ; Grab JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; we either increment or decrement
-    LDA !ram_cm_controller : BIT #$0200 : BNE .pressed_left
-    LDA [$44] : INC
+    LDA !ram_cm_controller : BIT !CTRL_LEFT : BNE .pressed_left
+    LDA [!DP_Address] : INC
     BRA .bounds_check
 
   .pressed_left
-    LDA [$44] : DEC
+    LDA [!DP_Address] : DEC
 
   .bounds_check
-    TAX     ; X = new value
-    LDY #$0000  ; Y will be set to max
+    TAX ; X = new value
+    LDY #$0000 ; Y will be set to max
 
     %a8()
   .loop_choices
-    LDA [$40] : %a16() : INC $40 : %a8() : CMP.b #$FF : BEQ .loop_done
+    LDA [!DP_MenuIndices] : %a16() : INC !DP_MenuIndices : %a8() : CMP.b #$FF : BEQ .loop_done
 
   .loop_text
-    LDA [$40] : %a16() : INC $40 : %a8()
+    LDA [!DP_MenuIndices] : %a16() : INC !DP_MenuIndices : %a8()
     CMP.b #$FF : BNE .loop_text
     INY : BRA .loop_choices
 
@@ -2125,8 +1987,8 @@ execute_choice:
 
     %a16()
     TXA : BMI .set_to_max
-    STY $38
-    CMP $38 : BCS .set_to_zero
+    STY !DP_Temp
+    CMP !DP_Temp : BCS .set_to_zero
 
     BRA .store
 
@@ -2137,17 +1999,17 @@ execute_choice:
     TYA : DEC
 
   .store
-    STA [$44]
+    STA [!DP_Address]
 
-    LDA $0000 : BEQ .end
+    LDA !DP_JSLTarget : BEQ .end
 
     ; Set return address for indirect JSL
-    LDA !ram_cm_menu_bank : STA $0002
+    LDA !ram_cm_menu_bank : STA !DP_JSLTarget+2
     PHK : PEA .end-1
 
     ; Pre-load address in A and jump to routine
-    LDA [$44] : LDX #$0000
-    JML [$0000]
+    LDA [!DP_Address] : LDX #$0000
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -2156,17 +2018,13 @@ execute_choice:
 }
 
 execute_ctrl_shortcut:
-; $0000[0x4] = indirect long jump pointer
-; $38[0x4] = increment
-; $40[0x4] = current menu item index
-; $44[0x4] = memory address (long) to manipulate
 {
     ; < and > should do nothing here
     ; also ignore the input held flag
     LDA !ram_cm_controller : BIT #$0301 : BNE .end
 
-    LDA [$40] : STA $38 : INC $40 : INC $40
-    LDA [$40] : STA $3A : INC $40
+    LDA [!DP_MenuIndices] : STA !DP_Value : INC !DP_MenuIndices : INC !DP_MenuIndices
+    LDA [!DP_MenuIndices] : STA !DP_Value+2 : INC !DP_MenuIndices
 
     LDA !ram_cm_controller : BIT #$0040 : BNE .reset_shortcut
 
@@ -2175,10 +2033,10 @@ execute_ctrl_shortcut:
     RTS
 
   .reset_shortcut
-    LDA.w #!sram_ctrl_menu : CMP $38 : BEQ .end
+    LDA.w #!sram_ctrl_menu : CMP !DP_Value : BEQ .end
 ;    %sfxfail()
 
-    LDA #$0000 : STA [$38]
+    LDA #$0000 : STA [!DP_Value]
 
   .end
     %ai16()
@@ -2186,8 +2044,6 @@ execute_ctrl_shortcut:
 }
 
 execute_controller_input:
-; $0000[0x4] = indirect long jump pointer
-; $40[0x4] = current menu item index
 ; unused, needs ram addresses from the game to function
 {
     ; <, > and X should do nothing here
@@ -2195,23 +2051,23 @@ execute_controller_input:
     LDA !ram_cm_controller : BIT #$0341 : BNE .end
 
     ; store long address as short address for now
-    LDA [$40] : INC $40 : INC $40 : INC $40
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : INC !DP_MenuIndices
 ;    STA !ram_cm_ctrl_assign
 
     ; $44 = JSL target
-    LDA [$40] : INC $40 : INC $40 : STA $0000
+    LDA [!DP_MenuIndices] : INC !DP_MenuIndices : INC !DP_MenuIndices : STA !DP_JSLTarget
 
     ; Set bank of action_submenu
     ; instead of the menu we're jumping to
-    LDA.l #action_submenu>>16 : STA $0002
+    LDA.l #action_submenu>>16 : STA !DP_JSLTarget+2
 
     ; Set return address for indirect JSL
     PHK : PEA .end-1
 
     ; Pre-load address in A/Y and jump to routine
-    LDA [$40] : TAY
+    LDA [!DP_MenuIndices] : TAY
     LDX #$0000
-    JML [$0000]
+    JML [!DP_JSLTarget]
 
   .end
     %ai16()
@@ -2271,7 +2127,7 @@ cm_draw3:
     PHB
     LDA !ram_draw_value : STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
     PEA $F0F0 : PLB : PLB ; waste cycles + set data bank
     LDA $004214 : STA !ram_tmp_2
@@ -2283,9 +2139,9 @@ cm_draw3:
     LDA !ram_tmp_2 : BEQ .blanktens
     STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
-    PEA $0000 : PLA
+    PEA $0000 : PLA ; waste cycles
     LDA $004214 : STA !ram_tmp_1
 
     ; Tens digit
@@ -2319,7 +2175,7 @@ cm_draw4:
     PHB
     LDA !ram_draw_value : STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
     PEA $F0F0 : PLB : PLB ; waste cycles + set data bank
     LDA $004214 : STA !ram_tmp_3
@@ -2331,9 +2187,9 @@ cm_draw4:
     LDA !ram_tmp_3 : BEQ .blanktens
     STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
-    PEA $0000 : PLA
+    PEA $0000 : PLA ; waste cycles
     LDA $004214 : STA !ram_tmp_2
 
     ; Tens digit
@@ -2343,7 +2199,7 @@ cm_draw4:
     LDA !ram_tmp_2 : BEQ .blankhundreds
     STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
     PEA $0000 : PLA
     LDA $004214 : STA !ram_tmp_1
@@ -2405,7 +2261,7 @@ cm_draw5:
     PHB
     LDA !ram_draw_value : STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
     PEA $F0F0 : PLB : PLB ; waste cycles + set data bank
     LDA $004214 : STA !ram_tmp_4
@@ -2418,9 +2274,9 @@ cm_draw5:
     BRL .blanktens
 +   STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
-    PEA $0000 : PLA
+    PEA $0000 : PLA ; waste cycles
     LDA $004214 : STA !ram_tmp_3
 
     ; Tens digit
@@ -2431,9 +2287,9 @@ cm_draw5:
     BRL .blankhundreds
 +   STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
-    PEA $0000 : PLA
+    PEA $0000 : PLA ; waste cycles
     LDA $004214 : STA !ram_tmp_2
 
     ; Hundreds digit
@@ -2443,9 +2299,9 @@ cm_draw5:
     LDA !ram_tmp_2 : BEQ .blankthousands
     STA $004204
     %a8()
-    LDA #$0A : STA $004206   ; divide by 10
+    LDA #$0A : STA $004206 ; divide by 10
     %a16()
-    PEA $0000 : PLA
+    PEA $0000 : PLA ; waste cycles
     LDA $004214 : STA !ram_tmp_1
 
     ; Thousands digit
@@ -2489,7 +2345,7 @@ cm_hex2dec:
 
     %a8()
     LDA #$64 : STA $4206
-    PHA : PLA : PHA : PLA
+    PHA : PLA : PHA : PLA ; waste cycles
 
     %a16()
     LDA $4214 : STA !ram_hex2dec_rest
@@ -2497,7 +2353,7 @@ cm_hex2dec:
 
     %a8()
     LDA #$0A : STA $4206
-    PHA : PLA : PHA : PLA
+    PHA : PLA : PHA : PLA ; waste cycles
 
     %a16()
     LDA $4214 : STA !ram_hex2dec_second_digit
@@ -2506,7 +2362,7 @@ cm_hex2dec:
 
     %a8()
     LDA #$0A : STA $4206
-    PHA : PLA : PHA : PLA
+    PHA : PLA : PHA : PLA ; waste cycles
 
     %a16()
     LDA $4214 : STA !ram_hex2dec_rest
@@ -2576,5 +2432,4 @@ ControllerGFXTable:
 ;       A       B       X       Y       R
     dw #$297F, #$2977, #$297E, #$2976, #$297C
 
-print pc, " menu end"
-warnpc $F08000 ; mainmenu.asm
+%endfree(F0)

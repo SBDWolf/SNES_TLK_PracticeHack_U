@@ -139,31 +139,31 @@ PalettesDisplayMenu:
     %cm_header("SHARE YOUR COLORS")
 
 display_header_outline:
-    %cm_numfield_hex_word("Header Outline", !sram_pal_header_outline)
+    %cm_numfield_hex_word("Header Outline", !sram_pal_header_outline, #$7FFF, #0)
 
 display_header_fill:
-    %cm_numfield_hex_word("Header Fill", !sram_pal_header_fill)
+    %cm_numfield_hex_word("Header Fill", !sram_pal_header_fill, #$7FFF, #0)
 
 display_text_outline:
-    %cm_numfield_hex_word("Text Outline", !sram_pal_text_outline)
+    %cm_numfield_hex_word("Text Outline", !sram_pal_text_outline, #$7FFF, #0)
 
 display_text_fill:
-    %cm_numfield_hex_word("Text Fill", !sram_pal_text_fill)
+    %cm_numfield_hex_word("Text Fill", !sram_pal_text_fill, #$7FFF, #0)
 
 display_special_outline:
-    %cm_numfield_hex_word("Special Outline", !sram_pal_special_outline)
+    %cm_numfield_hex_word("Special Outline", !sram_pal_special_outline, #$7FFF, #0)
 
 display_special_fill:
-    %cm_numfield_hex_word("Special Fill", !sram_pal_special_fill)
+    %cm_numfield_hex_word("Special Fill", !sram_pal_special_fill, #$7FFF, #0)
 
 display_selected_outline:
-    %cm_numfield_hex_word("Selected Text Outline", !sram_pal_selected_outline)
+    %cm_numfield_hex_word("Selected Text Outline", !sram_pal_selected_outline, #$7FFF, #0)
 
 display_selected_fill:
-    %cm_numfield_hex_word("Selected Text Fill", !sram_pal_selected_fill)
+    %cm_numfield_hex_word("Selected Text Fill", !sram_pal_selected_fill, #$7FFF, #0)
 
 display_background:
-    %cm_numfield_hex_word("Background", !sram_pal_background)
+    %cm_numfield_hex_word("Background", !sram_pal_background, #$7FFF, #0)
 
 
 ; ---------
@@ -177,18 +177,17 @@ PrepMenuPalette:
 
     PHB
     PHK : PLB
-    LDA.l PaletteProfileTable,X : STA $38
-    LDY #$0002 : LDA ($38),Y : STA !ram_pal_header_outline
-    LDY #$0006 : LDA ($38),Y : STA !ram_pal_header_fill
-    LDY #$000A : LDA ($38),Y : STA !ram_pal_text_outline
-    LDY #$000E : LDA ($38),Y : STA !ram_pal_text_fill
-    LDY #$0012 : LDA ($38),Y : STA !ram_pal_special_outline
-    LDY #$0016 : LDA ($38),Y : STA !ram_pal_special_fill
-    LDY #$001A : LDA ($38),Y : STA !ram_pal_selected_outline
-    LDY #$001E : LDA ($38),Y : STA !ram_pal_selected_fill
-    LDY #$0004 : LDA ($38),Y
-    STA !ram_pal_background : STA !ram_cm_cgram+$0C
-    STA !ram_cm_cgram+$14 : STA !ram_cm_cgram+$1C
+    LDA.l PaletteProfileTable,X : STA !DP_Temp
+    LDY #$0002 : LDA (!DP_Temp),Y : STA !ram_pal_header_outline
+    LDY #$0006 : LDA (!DP_Temp),Y : STA !ram_pal_header_fill
+    LDY #$000A : LDA (!DP_Temp),Y : STA !ram_pal_text_outline
+    LDY #$000E : LDA (!DP_Temp),Y : STA !ram_pal_text_fill
+    LDY #$0012 : LDA (!DP_Temp),Y : STA !ram_pal_special_outline
+    LDY #$0016 : LDA (!DP_Temp),Y : STA !ram_pal_special_fill
+    LDY #$001A : LDA (!DP_Temp),Y : STA !ram_pal_selected_outline
+    LDY #$001E : LDA (!DP_Temp),Y : STA !ram_pal_selected_fill
+    LDY #$0004 : LDA (!DP_Temp),Y : STA !ram_pal_background
+    STA !ram_cm_cgram+$0C : STA !ram_cm_cgram+$14 : STA !ram_cm_cgram+$1C
     PLB
     RTL
 
@@ -213,18 +212,18 @@ copy_menu_palette:
     PHK : PLB
     LDA !sram_pal_profile : BNE +
     BRL .fail
-+   ASL : TAX : LDA.l PaletteProfileTable,X : STA $3A
++   ASL : TAX : LDA.l PaletteProfileTable,X : STA !DP_Temp
 
     ; copy table to SRAM
-    LDY #$0002 : LDA ($3A),Y : STA !sram_pal_header_outline
-    LDY #$0006 : LDA ($3A),Y : STA !sram_pal_header_fill
-    LDY #$000A : LDA ($3A),Y : STA !sram_pal_text_outline
-    LDY #$000E : LDA ($3A),Y : STA !sram_pal_text_fill
-    LDY #$0012 : LDA ($3A),Y : STA !sram_pal_special_outline
-    LDY #$0016 : LDA ($3A),Y : STA !sram_pal_special_fill
-    LDY #$001A : LDA ($3A),Y : STA !sram_pal_selected_outline
-    LDY #$001E : LDA ($3A),Y : STA !sram_pal_selected_fill
-    LDY #$000C : LDA ($3A),Y : STA !sram_pal_background
+    LDY #$0002 : LDA (!DP_Temp),Y : STA !sram_pal_header_outline
+    LDY #$0006 : LDA (!DP_Temp),Y : STA !sram_pal_header_fill
+    LDY #$000A : LDA (!DP_Temp),Y : STA !sram_pal_text_outline
+    LDY #$000E : LDA (!DP_Temp),Y : STA !sram_pal_text_fill
+    LDY #$0012 : LDA (!DP_Temp),Y : STA !sram_pal_special_outline
+    LDY #$0016 : LDA (!DP_Temp),Y : STA !sram_pal_special_fill
+    LDY #$001A : LDA (!DP_Temp),Y : STA !sram_pal_selected_outline
+    LDY #$001E : LDA (!DP_Temp),Y : STA !sram_pal_selected_fill
+    LDY #$000C : LDA (!DP_Temp),Y : STA !sram_pal_background
 
     ; refresh current profile
     JSL refresh_custom_palettes
@@ -255,12 +254,12 @@ cm_copy_cgram:
     ; Custom or pre-made palette
     LDA !sram_pal_profile : BEQ .custom
     ASL : TAX
-    LDA.l PaletteProfileTable,X : STA $38
-    LDA.w #PaletteProfileTable>>16 : STA $3A
+    LDA.l PaletteProfileTable,X : STA !DP_Temp
+    LDA.w #PaletteProfileTable>>16 : STA !DP_Temp+2
 
     LDX #$0000
--   LDA [$38] : STA !ram_cm_cgram,X
-    INC $38 : INC $38
+-   LDA [!DP_Temp] : STA !ram_cm_cgram,X
+    INC !DP_Temp : INC !DP_Temp
     INX #2 : CPX #$0020 : BMI -
     RTL
 
@@ -273,9 +272,8 @@ cm_copy_cgram:
     LDA !sram_pal_special_fill : STA !ram_pal_special_fill
     LDA !sram_pal_selected_outline : STA !ram_pal_selected_outline
     LDA !sram_pal_selected_fill : STA !ram_pal_selected_fill
-    LDA !sram_pal_background
-    STA !ram_pal_background : STA !ram_cm_cgram+$0C
-    STA !ram_cm_cgram+$14 : STA !ram_cm_cgram+$1C
+    LDA !sram_pal_background : STA !ram_pal_background
+    STA !ram_cm_cgram+$0C : STA !ram_cm_cgram+$14 : STA !ram_cm_cgram+$1C
 
     JSL PrepMenuPalette
     RTL
@@ -321,12 +319,11 @@ cm_colors:
 cm_setup_RGB:
 {
     ; Split 15-bit SNES "BGR" color value into individual 5-bit RGB values
-    LDA [$38] : AND #$7C00 : XBA : LSR #2 : STA !ram_pal_blue
-    LDA [$38] : AND #$03E0 : LSR #5 : STA !ram_pal_green
-    LDA [$38] : AND #$001F : STA !ram_pal_red
+    LDA [!DP_Temp] : AND #$7C00 : XBA : LSR #2 : STA !ram_pal_blue
+    LDA [!DP_Temp] : AND #$03E0 : LSR #5 : STA !ram_pal_green
+    LDA [!DP_Temp] : AND #$001F : STA !ram_pal_red
     ; Split 16-bit value into two 16-bit values for the menu
-    LDA [$38] : %a8() : STA !ram_pal_lo
-    XBA : STA !ram_pal_hi
+    LDA [!DP_Temp] : STA !ram_pal
     %a16()
     RTL
 }
@@ -336,19 +333,17 @@ MixRGB:
     ; figure out which menu element is being edited
     LDA !ram_cm_stack_index : DEC #2 : TAX
     LDA !ram_cm_cursor_stack,X : TAX
-    LDA.l MenuPaletteTable,X : STA $38 ; store indirect address
-    LDA.w #!SRAM_START>>16 : STA $3A ; store indirect bank
+    LDA.l MenuPaletteTable,X : STA !DP_Temp ; store indirect address
+    LDA.w #!SRAM_START>>16 : STA !DP_Temp+2 ; store indirect bank
 
     ; mix RGB values
-    LDA !ram_pal_blue : XBA : ASL #2 : STA $3C
-    LDA !ram_pal_green : ASL #5 : ORA $3C : STA $3C
-    LDA !ram_pal_red : ORA $3C
-    STA [$38] ; store combined color value
+    LDA !ram_pal_blue : XBA : ASL #2 : STA !DP_Palette
+    LDA !ram_pal_green : ASL #5 : ORA !DP_Palette : STA !DP_Palette
+    LDA !ram_pal_red : ORA !DP_Palette
+    STA [!DP_Temp] ; store combined color value
 
     ; update split values as well
-    %a8()
-    STA !ram_pal_lo : XBA : STA !ram_pal_hi
-    %a16()
+    STA !ram_pal
 
     JSL refresh_custom_palettes
     RTL

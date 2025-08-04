@@ -430,23 +430,23 @@ levelselect_checkpoint_load:
 
 CheckpointListTable:
   .Pridelands        ; $00
-    dw $0290, $0250 ; $00 midway
-    dw $0490, $0070 ; $04 top
+    dw $0290, $0250  ; $00 midway
+    dw $0490, $0070  ; $04 top
   .RoarAtMonkeys     ; $01
-    dw $0B70, $01E0 ; $08 hippos
-    dw $1270, $01E0 ; $0C monkeys
+    dw $0B70, $01E0  ; $08 hippos
+    dw $1270, $01E0  ; $0C monkeys
   .ElephantGraveyard ; $02
-    dw $0F60, $02C0 ; $10 geysers
+    dw $0F60, $02C0  ; $10 geysers
   .SimbasExile       ; $04
-    dw $04E0, $0830 ; $14 clip
+    dw $04E0, $0830  ; $14 clip
   .HakunaMatata      ; $05
-    dw $03B0, $0080 ; $18 top
-    dw $0B40, $0350 ; $1C gorilla
+    dw $03B0, $0080  ; $18 top
+    dw $0B40, $0350  ; $1C gorilla
   .SimbasDestiny     ; $06
-    dw $08C0, $0270 ; $20 midway
+    dw $08C0, $0270  ; $20 midway
   .BePrepared        ; $07
-    dw $1250, $0210 ; $24 midway
-    dw $0310, $0240 ; $28 final
+    dw $1250, $0210  ; $24 midway
+    dw $0310, $0240  ; $28 final
 }
 
 

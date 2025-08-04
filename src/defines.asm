@@ -11,7 +11,7 @@
 !VERSION_MINOR = 0
 !VERSION_BUILD = 4
 !VERSION_REV_1 = 0
-!VERSION_REV_2 = 1
+!VERSION_REV_2 = 2
 !SRAM_VERSION = #$0001 ; inc this to force initialization of new SRAM
 
 !TILE_CLEAR = #$0140
@@ -44,6 +44,7 @@
 !CTRL_X = #$0040
 !CTRL_L = #$0020
 !CTRL_R = #$0010
+!CTRL_HELD = #$0001
 
 !ACTION_TOGGLE              = #$0000
 !ACTION_TOGGLE_BIT          = #$0002
@@ -74,9 +75,9 @@
 !ram_tilemap_buffer = $7EF9C0 ; 0x640
 
 !MENU_RAM_START = $7E1E20
-!MENU_RAM_SIZE = #$0060
-!WRAM_START = $7E1E80
-!WRAM_SIZE = #$0080
+!MENU_RAM_SIZE = #$0080
+!WRAM_START = $7E1EA0
+!WRAM_SIZE = #$0060
 !MENU_PALETTES = $7E0100
 !MENU_PALETTES_SIZE = #$004E
 
@@ -88,37 +89,39 @@
 !ram_cm_leave = !MENU_RAM_START+$24
 !ram_cm_controller = !MENU_RAM_START+$26
 !ram_cm_input_timer = !MENU_RAM_START+$28
-!ram_cm_input_counter = !MENU_RAM_START+$2A
-!ram_cm_ctrl_mode = !MENU_RAM_START+$2C
-!ram_cm_ctrl_timer = !MENU_RAM_START+$2E
-!ram_cm_ctrl_last_input = !MENU_RAM_START+$30
-!ram_cm_stack_index = !MENU_RAM_START+$32
-!ram_cm_blank_tile = !MENU_RAM_START+$34
-!ram_menu_active = !MENU_RAM_START+$36
+!ram_cm_ctrl_mode = !MENU_RAM_START+$2A
+!ram_cm_ctrl_timer = !MENU_RAM_START+$2C
+!ram_cm_ctrl_last_input = !MENU_RAM_START+$2E
+!ram_cm_stack_index = !MENU_RAM_START+$30
+!ram_cm_blank_tile = !MENU_RAM_START+$32
+!ram_menu_active = !MENU_RAM_START+$34
+!ram_cm_Simba_Age = !MENU_RAM_START+$36
+!ram_cm_difficulty = !MENU_RAM_START+$38
+!ram_cm_horizontal_cursor = !MENU_RAM_START+$3A
 
-; $38..4B reserved for menu DP usage
-!DP_JSLTarget = $0000 ; 4
-!DP_Temp = $38 ; 4
-!DP_Frames = $38
-!DP_Minimum = $38
-!DP_Maximum = $3A
-!DP_Value = $3A
-!DP_Seconds = $3A
-!DP_Minutes = $3C
-!DP_Toggle = $3C
-!DP_Increment = $3C
-!DP_Palette = $3E
-!DP_MenuIndices = $40
-!DP_MenuBank = $42
-!DP_CurrentMenu = $44 ; 4
-!DP_Address = $48 ; 4
+!DP_JSLTarget = $0000 ; 0x4
+!DP_Temp = $5C ; 0x4
+!DP_Frames = $5C
+!DP_Minimum = $5C
+!DP_Maximum = $5E
+!DP_Value = $5E
+!DP_Seconds = $5E
+!DP_Minutes = $60
+!DP_Toggle = $60
+!DP_Increment = $60
+!DP_Palette = $62
+!DP_MenuIndices = $64
+!DP_MenuBank = $66
+!DP_CurrentMenu = $68 ; 0x4
+!DP_Address = $6C ; 0x4
+!DP_FirstDigit = $70
+!DP_SecondDigit = $72
+!DP_ThirdDigit = $74
+!DP_DigitAddress = $76 ; 0x4
+!DP_DigitValue = $7A
+!DP_DigitMinimum = $7C
+!DP_DigitMaximum = $7E
 
-!ram_cm_music_test = !MENU_RAM_START+$50
-!ram_cm_sfx_test = !MENU_RAM_START+$52
-!ram_cm_Simba_Age = !MENU_RAM_START+$54
-!ram_cm_levelselect_target = !MENU_RAM_START+$56
-!ram_cm_difficulty = !MENU_RAM_START+$58
-; FREE SPACE ^ up to +$5F ($1E7F)
 
 ; Menu palette RAM
 !ram_cm_cgram = !MENU_PALETTES+$00 ; 0x20
@@ -136,14 +139,13 @@
 !ram_pal_blue = !MENU_PALETTES+$40
 !ram_pal_green = !MENU_PALETTES+$42
 !ram_pal_red = !MENU_PALETTES+$44
-!ram_pal_lo = !MENU_PALETTES+$46
-!ram_pal_hi = !MENU_PALETTES+$48
+!ram_pal = !MENU_PALETTES+$46
 
 
 ; Non-menu RAM
-!ram_levelselect_enable = !WRAM_START+$00
-!ram_levelselect_target = !WRAM_START+$02
-!ram_levelselect_nexttarget = !WRAM_START+$04
+!ram_temp = !WRAM_START+$00
+!ram_levelselect_enable = !WRAM_START+$02
+!ram_levelselect_target = !WRAM_START+$04
 !ram_levelselect_checkpoint = !WRAM_START+$06
 !ram_TimeAttack_DoNotRecord = !WRAM_START+$08
 !ram_TimeControl_mode = !WRAM_START+$0A
@@ -152,13 +154,12 @@
 
 !ram_death_loops = !WRAM_START+$10
 !ram_play_music_track = !WRAM_START+$12
-!ram_play_sfx = !WRAM_START+$14
-!ram_loadstate_repeat = !WRAM_START+$16
-!ram_loadstate_2100 = !WRAM_START+$18 ; 0x1
-!ram_loadstate_4200 = !WRAM_START+$19 ; 0x1
-!ram_lag_display = !WRAM_START+$1A
+!ram_loadstate_repeat = !WRAM_START+$14
+!ram_loadstate_2100 = !WRAM_START+$16 ; 0x1
+!ram_loadstate_4200 = !WRAM_START+$17 ; 0x1
+!ram_lag_display = !WRAM_START+$18
 
-; FREE SPACE ^
+; FREE SPACE ^ up to +$1E
 
 !ram_timer_frames = !WRAM_START+$20 ; 0x1
 !ram_timer_seconds = !WRAM_START+$21 ; 0x1
@@ -171,34 +172,23 @@
 !ram_timer_recorded = !WRAM_START+$2C ; 0x2
 !ram_timer_ignore = !WRAM_START+$2E ; 0x2
 
-; FREE SPACE ^ up to +$4E
+; FREE SPACE ^ up to +$3E
 
-!ram_mem_editor_active = !WRAM_START+$50
-!ram_mem_address_bank = !WRAM_START+$52
-!ram_mem_address = !WRAM_START+$54
-!ram_mem_address_hi = !WRAM_START+$56
-!ram_mem_address_lo = !WRAM_START+$58
-!ram_mem_memory_size = !WRAM_START+$5A
-!ram_mem_editor_hi = !WRAM_START+$5C
-!ram_mem_editor_lo = !WRAM_START+$5E
-!ram_draw_value = !WRAM_START+$60
-!ram_mem_line_position = !WRAM_START+$62
-!ram_mem_loop_counter = !WRAM_START+$64
-!ram_TimeControl_P1 = !WRAM_START+$66
-!ram_TimeControl_P2 = !WRAM_START+$68
-!LK_Controller_P2New = !WRAM_START+$6A
-!LK_Controller_P2Current = !WRAM_START+$6C
-!LK_Controller_P2Filtered = !WRAM_START+$6E
+!ram_mem_editor_active = !WRAM_START+$40
+!ram_mem_address_bank = !WRAM_START+$42
+!ram_mem_address = !WRAM_START+$44
+!ram_mem_memory_size = !WRAM_START+$46
+!ram_mem_editor = !WRAM_START+$48
+!ram_draw_value = !WRAM_START+$4A
+!ram_mem_line_position = !WRAM_START+$4C
+!ram_mem_loop_counter = !WRAM_START+$4E
+!ram_TimeControl_P1 = !WRAM_START+$50
+!ram_TimeControl_P2 = !WRAM_START+$52
+!LK_Controller_P2New = !WRAM_START+$54
+!LK_Controller_P2Current = !WRAM_START+$56
+!LK_Controller_P2Filtered = !WRAM_START+$58
 
-!ram_hex2dec_first_digit = !WRAM_START+$70
-!ram_hex2dec_second_digit = !WRAM_START+$72
-!ram_hex2dec_third_digit = !WRAM_START+$74
-!ram_hex2dec_rest = !WRAM_START+$76
-
-!ram_tmp_1 = !WRAM_START+$78
-!ram_tmp_2 = !WRAM_START+$7A
-!ram_tmp_3 = !WRAM_START+$7C
-!ram_tmp_4 = !WRAM_START+$7E
+; FREE SPACE ^ up to +$5E
 ; end of freespace @ $1F00
 
 

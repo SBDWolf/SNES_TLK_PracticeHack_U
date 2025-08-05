@@ -84,19 +84,38 @@ org !MENU_RAM_START+$22 : ram_cm_menu_bank:
 org !MENU_RAM_START+$24 : ram_cm_leave:
 org !MENU_RAM_START+$26 : ram_cm_controller:
 org !MENU_RAM_START+$28 : ram_cm_input_timer:
-org !MENU_RAM_START+$2A : ram_cm_input_counter:
-org !MENU_RAM_START+$2C : ram_cm_ctrl_mode:
-org !MENU_RAM_START+$2E : ram_cm_ctrl_timer:
-org !MENU_RAM_START+$30 : ram_cm_ctrl_last_input:
-org !MENU_RAM_START+$32 : ram_cm_stack_index:
+org !MENU_RAM_START+$2A : ram_cm_ctrl_mode:
+org !MENU_RAM_START+$2C : ram_cm_ctrl_timer:
+org !MENU_RAM_START+$2E : ram_cm_ctrl_last_input:
+org !MENU_RAM_START+$30 : ram_cm_stack_index:
+org !MENU_RAM_START+$32 : ram_cm_blank_tile:
+org !MENU_RAM_START+$34 : ram_menu_active:
+org !MENU_RAM_START+$36 : ram_cm_Simba_Age:
+org !MENU_RAM_START+$38 : ram_cm_difficulty:
+org !MENU_RAM_START+$3A : ram_cm_horizontal_cursor:
 
-org !MENU_RAM_START+$36 : ram_menu_active:
-
-org !MENU_RAM_START+$50 : ram_cm_music_test:
-org !MENU_RAM_START+$52 : ram_cm_sfx_test:
-org !MENU_RAM_START+$54 : ram_cm_Simba_Age:
-org !MENU_RAM_START+$56 : ram_cm_levelselect_target:
-org !MENU_RAM_START+$58 : ram_cm_difficulty:
+org $000000 : DP_JSLTarget:
+org $001E7C : DP_Temp:
+org $001E7C : DP_Frames:
+org $001E7C : DP_Minimum:
+org $001E7E : DP_Maximum:
+org $001E7E : DP_Value:
+org $001E7E : DP_Seconds:
+org $001E80 : DP_Minutes:
+org $001E80 : DP_Toggle:
+org $001E80 : DP_Increment:
+org $001E82 : DP_Palette:
+org $001E84 : DP_MenuIndices:
+org $001E86 : DP_MenuBank:
+org $001E88 : DP_CurrentMenu:
+org $001E8C : DP_Address:
+org $001E90 : DP_FirstDigit:
+org $001E92 : DP_SecondDigit:
+org $001E94 : DP_ThirdDigit:
+org $001E96 : DP_DigitAddress:
+org $001E9A : DP_DigitValue:
+org $001E9C : DP_DigitMinimum:
+org $001E9E : DP_DigitMaximum:
 
 org !MENU_PALETTES+$00 : ram_cm_cgram:
 org !MENU_PALETTES+$02 : ram_pal_header_outline:
@@ -109,29 +128,26 @@ org !MENU_PALETTES+$1A : ram_pal_selected_outline:
 org !MENU_PALETTES+$1E : ram_pal_selected_fill:
 org !MENU_PALETTES+$04 : ram_pal_background:
 org !MENU_PALETTES+$20 : ram_cm_cgram_backup:
-org !MENU_PALETTES+$40 : sram_pal_blue:
-org !MENU_PALETTES+$42 : sram_pal_green:
-org !MENU_PALETTES+$44 : sram_pal_red:
-org !MENU_PALETTES+$46 : ram_pal_lo:
-org !MENU_PALETTES+$48 : ram_pal_hi:
+org !MENU_PALETTES+$40 : ram_pal_blue:
+org !MENU_PALETTES+$42 : ram_pal_green:
+org !MENU_PALETTES+$44 : ram_pal_red:
+org !MENU_PALETTES+$46 : ram_pal:
 
-org !WRAM_START+$00 : ram_levelselect_enable:
-org !WRAM_START+$02 : ram_levelselect_target:
-org !WRAM_START+$04 : ram_levelselect_nexttarget:
-org !WRAM_START+$06 : ram_TimeAttack_DoNotRecord:
-org !WRAM_START+$08 : ram_TimeControl_mode:
-org !WRAM_START+$0A : ram_TimeControl_frames:
-org !WRAM_START+$0C : ram_TimeControl_timer:
+org !WRAM_START+$00 : ram_temp:
+org !WRAM_START+$02 : ram_levelselect_enable:
+org !WRAM_START+$04 : ram_levelselect_target:
+org !WRAM_START+$06 : ram_levelselect_checkpoint:
+org !WRAM_START+$08 : ram_TimeAttack_DoNotRecord:
+org !WRAM_START+$0A : ram_TimeControl_mode:
+org !WRAM_START+$0C : ram_TimeControl_frames:
+org !WRAM_START+$0E : ram_TimeControl_timer:
 
 org !WRAM_START+$10 : ram_death_loops:
 org !WRAM_START+$12 : ram_play_music_track:
-org !WRAM_START+$14 : ram_play_sfx:
-org !WRAM_START+$16 : ram_loadstate_repeat:
-org !WRAM_START+$18 : ram_loadstate_2100:
-org !WRAM_START+$19 : ram_loadstate_4200:
-org !WRAM_START+$1A : ram_lag_display:
-
-
+org !WRAM_START+$14 : ram_loadstate_repeat:
+org !WRAM_START+$16 : ram_loadstate_2100:
+org !WRAM_START+$17 : ram_loadstate_4200:
+org !WRAM_START+$18 : ram_lag_display:
 
 org !WRAM_START+$20 : ram_timer_frames:
 org !WRAM_START+$21 : ram_timer_seconds:
@@ -144,31 +160,19 @@ org !WRAM_START+$2A : ram_previous_minutes:
 org !WRAM_START+$2C : ram_timer_recorded:
 org !WRAM_START+$2E : ram_timer_ignore:
 
-org !WRAM_START+$50 : ram_mem_editor_active:
-org !WRAM_START+$52 : ram_mem_address_bank:
-org !WRAM_START+$54 : ram_mem_address:
-org !WRAM_START+$56 : ram_mem_address_hi:
-org !WRAM_START+$58 : ram_mem_address_lo:
-org !WRAM_START+$5A : ram_mem_memory_size:
-org !WRAM_START+$5C : ram_mem_editor_hi:
-org !WRAM_START+$5E : ram_mem_editor_lo:
-org !WRAM_START+$60 : ram_draw_value:
-org !WRAM_START+$62 : ram_mem_line_position:
-org !WRAM_START+$64 : ram_mem_loop_counter:
-
-org !WRAM_START+$6A : LK_Controller_P2New:
-org !WRAM_START+$6C : LK_Controller_P2Current:
-org !WRAM_START+$6E : LK_Controller_P2Filtered:
-
-org !WRAM_START+$70 : ram_hex2dec_first_digit:
-org !WRAM_START+$72 : ram_hex2dec_second_digit:
-org !WRAM_START+$74 : ram_hex2dec_third_digit:
-org !WRAM_START+$76 : ram_hex2dec_rest:
-
-org !WRAM_START+$78 : ram_tmp_1:
-org !WRAM_START+$7A : ram_tmp_2:
-org !WRAM_START+$7C : ram_tmp_3:
-org !WRAM_START+$7E : ram_tmp_4:
+org !WRAM_START+$40 : ram_mem_editor_active:
+org !WRAM_START+$42 : ram_mem_address_bank:
+org !WRAM_START+$44 : ram_mem_address:
+org !WRAM_START+$46 : ram_mem_memory_size:
+org !WRAM_START+$48 : ram_mem_editor:
+org !WRAM_START+$4A : ram_draw_value:
+org !WRAM_START+$4C : ram_mem_line_position:
+org !WRAM_START+$4E : ram_mem_loop_counter:
+org !WRAM_START+$50 : ram_TimeControl_P1:
+org !WRAM_START+$52 : ram_TimeControl_P2:
+org !WRAM_START+$54 : LK_Controller_P2New:
+org !WRAM_START+$56 : LK_Controller_P2Current:
+org !WRAM_START+$58 : LK_Controller_P2Filtered:
 
 
 ; SRAM

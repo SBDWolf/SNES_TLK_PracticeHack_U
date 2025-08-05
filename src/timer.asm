@@ -365,9 +365,9 @@ TimeAttack:
     LDA !LK_Current_Level : CMP #$000A : BPL .done
 
     ; use current level * 3 + difficulty * 20 as index
-    ASL : ADC !LK_Current_Level : STA !ram_tmp_1
+    ASL : ADC !LK_Current_Level : STA !ram_temp
     LDA !LK_Options_Difficulty : ASL #5
-    CLC : ADC !ram_tmp_1 : TAX
+    CLC : ADC !ram_temp : TAX
 
     ; check if PB
     %a8()

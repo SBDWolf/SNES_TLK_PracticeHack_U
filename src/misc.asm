@@ -309,8 +309,8 @@ LevelTrackList:
     dw #$000E ; King of Pride Rock, Simba's Exile
     dw #$000A ; Hakuna Matata
     dw #$000F ; Under the Stars, Simba's Destiny
-    dw #$000B ; Hoo Hah, Be Prepared + Simba's Return
-    dw #$000B ; Hoo Hah, Be Prepared + Simba's Return
+    dw #$0007 ; Continue Long, Be Prepared
+    dw #$000B ; Hoo Hah, Simba's Return
     dw #$FFFF ; Pride Rock track unavailable with this method
     dw #$0002 ; Bug Toss
     dw #$0001 ; Bug Hunt

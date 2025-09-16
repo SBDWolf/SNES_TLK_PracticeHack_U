@@ -1,4 +1,8 @@
 
+## Version 2.0.5
+- Fixed Be Prepared track after loading a savestate
+- Added the ability to edit large numbers (max greater than 99/$255) one digit at a time
+
 ## Version 2.0.4
 - Fixed best level times being overwritten when loading next level
 
